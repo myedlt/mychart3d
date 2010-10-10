@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300" creationComplete="initApp(event)">
+	<mx:Script>
+		<![CDATA[
+			
+			/**/
+			private var configXML:XML;
+			private var dataXML:XML;
+			private var cameraXML:XML;
+
+			[Bindable]
+			public var isDebug:Boolean = false;	// 调试开关
+
+			[Bindable]
+			public var bgColor:Number = 0xFFFFFF;	// 填充背景色
+			
+			private var chart3D:Chart3D;
+			
+			private function initApp(e:Event):void
+			{
+				create3D();
+			}
+			
+			public function create3D():void
+			{
+				//
+				if(chart3D)
+				{
+					chart3D.removeEventListener("RotationEvent",showMsg);
+					this.rawChildren.removeChild(chart3D);
+				}
+				
+				chart3D = new Chart3D();
+				this.rawChildren.addChildAt(chart3D,0);
+				
+				chart3D.setup3D(this.width,this.height,bgColor,isDebug);
+				chart3D.addEventListener("RotationEvent",showMsg);
+			}
+			
+			public function updateConfig(confXML:XML):void
+			{
+				configXML = confXML;
+				
+			}
+			
+			public function updateData(dtXML:XML):void
+			{
+				dataXML = dtXML;
+				
+				// 绘制图形
+				chart3D.createAxisFromXML(configXML.axis[0]);
+				chart3D.createAxisMarkFromXML1(configXML.axis[0]);
+				chart3D.setCameraFromXML(configXML.camera[0].view[0]);
+				chart3D.setPositionFromXML(configXML.camera[0].view[0].position[0]);
+				
+				chart3D.createCubeFromXML(dataXML);	
+				
+				chart3D.renderClick();
+				
+				chart3D.dispatchRotationEvent();
+			}
+			
+			private function showMsg(evt:Event):void
+			{
+				msgP.text = "Position:("+Math.round(chart3D.camera.x)+","+Math.round(chart3D.camera.y)+","+Math.round(chart3D.camera.z)+")\n"
+					+"Rotation:（"+Math.round(chart3D.camera.rotationX)+"，"+Math.round(chart3D.camera.rotationY)+"，"+Math.round(chart3D.camera.rotationZ)+"）\n"
+					+"Focus: "+chart3D.camera.focus+"\n";						
+				
+			}
+
+		]]>
+	</mx:Script>
+	<mx:CheckBox x="10" label="Axis" click="chart3D.d3oAxis.visible = !chart3D.d3oAxis.visible;" selected="true" bottom="41"/>
+	<mx:CheckBox x="10" label="Label" click="chart3D.d3oAxisMark.visible = !chart3D.d3oAxisMark.visible;" selected="true" bottom="22"/>
+	<mx:CheckBox x="10" label="Cube" click="chart3D.d3oCube.visible = !chart3D.d3oCube.visible;" selected="true" bottom="5"/>
+	<mx:Text text="Position:( 8570,10094,-26376)&#xa;Rotation:（30，-30，0）&#xa;Focus: 50&#xa;" width="135" height="50" id="msgP" right="0" top="0" fontFamily="Arial" fontSize="9"/>
+
+</mx:Canvas>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="horizontal" 
+				xmlns:chart3d="info.osmatrix.rmengine.components.*" applicationComplete="initApp(event)" width="1198" height="768">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.NumericStepperEvent;
+			
+			[Bindable]
+			public var dataXML:XML; 
+
+			protected function initApp(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				loadDataXML();
+			}
+
+			private function reloadXML():void
+			{
+				chart_11.create3D();
+				chart_11.updateConfig(dataXML.config[0]);
+				chart_11.updateData(dataXML);
+			}
+			
+			private function loadDataXML():void
+			{
+				var urlReq:URLRequest = new URLRequest("assets/demo/data.xml");
+				var urlLoader:URLLoader = new URLLoader();
+				
+				urlLoader.addEventListener(Event.COMPLETE, dataXMLComplete);
+				urlLoader.load(urlReq);			
+				
+			}
+			
+			private function dataXMLComplete(evt:Event):void
+			{
+				dataXML = XML(evt.target.data);
+				reloadXML();
+			}			
+		]]>
+	</mx:Script>
+	
+	<chart3d:Chart3DCanvas id="chart_11" borderStyle="solid" width="864" height="522" isDebug="true" />
+	<mx:VBox>
+		<mx:HBox width="100%">	
+			<mx:Button x="966" y="10" label="reload" click="reloadXML();"/>
+			<mx:Button x="859" y="10" label="unload" click="chart_11.create3D()"/>
+		</mx:HBox>
+		
+		<mx:Accordion x="733.95" y="37" width="280.05" height="613">
+			<mx:VBox label="Camera" width="100%" height="100%">
+				<mx:HBox>
+					<mx:Label text="Focus:" width="74"/>
+					<mx:TextInput id="focusCamera" width="149" text="{dataXML.config.camera.@focus}" change="{dataXML.config.camera.@focus = focusCamera.text}" />
+				</mx:HBox>
+				
+				<mx:HBox width="100%" backgroundColor="#E26363">
+					<mx:Label text="Camera Position"/>
+				</mx:HBox>
+				
+				<mx:VBox label="Camera" horizontalAlign="center" verticalGap="2" width="100%" x="0" y="27">
+					<mx:HBox>
+						<mx:Label text="X:"/>
+						<mx:TextInput id="xCamera" width="76" text="{dataXML.config.camera.view[0].point.@x}" change="{dataXML.config.camera.view[0].point.@x = xCamera.text}" />
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Y:"/>
+						<mx:TextInput id="yCamera" width="76" text="{dataXML.config.camera.view[0].point.@y}" change="{dataXML.config.camera.view[0].point.@y = yCamera.text}" />
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Z:"/>
+						<mx:TextInput id="zCamera" width="77" text="{dataXML.config.camera.view[0].point.@z}" change="{dataXML.config.camera.view[0].point.@z = zCamera.text}" />
+					</mx:HBox>
+				</mx:VBox>
+				
+				<mx:HBox width="100%" backgroundColor="#E26363">
+					<mx:Label text="3D Object Position"/>
+				</mx:HBox>
+				
+				<mx:VBox label="D3oAll" horizontalAlign="center" verticalGap="2" width="100%" x="0" y="27">
+					<mx:HBox>
+						<mx:Label text="X:"/>
+						<mx:TextInput id="xD3oAll" width="76" text="{dataXML.config.camera.view[0].position.@x}" change="{dataXML.config.camera.view[0].position.@x = xD3oAll.text}" />
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Y:"/>
+						<mx:TextInput id="yD3oAll" width="76" text="{dataXML.config.camera.view[0].position.@y}" change="{dataXML.config.camera.view[0].position.@y = yD3oAll.text}" />
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Z:"/>
+						<mx:TextInput id="zD3oAll" width="77" text="{dataXML.config.camera.view[0].position.@z}" change="{dataXML.config.camera.view[0].position.@z = zD3oAll.text}" />
+					</mx:HBox>
+				</mx:VBox>						
+			</mx:VBox>
+			
+			<mx:Canvas label="Axis" width="100%" height="100%">
+				<mx:Form x="0" y="0" height="137" width="100%">
+					<mx:FormItem label="X Max">
+						<mx:TextInput id="xAxisMax" text="{dataXML.config.axis.@xmax}" change="{dataXML.config.axis.@xmax = xAxisMax.text}"/>
+					</mx:FormItem>
+					<mx:FormItem label="Y Max">
+						<mx:TextInput id="yAxisMax" text="{dataXML.config.axis.@ymax}" change="{dataXML.config.axis.@ymax = yAxisMax.text}"/>
+					</mx:FormItem>
+					<mx:FormItem label="Z Max">
+						<mx:TextInput id="zAxisMax" text="{dataXML.config.axis.@zmax}" change="{dataXML.config.axis.@zmax = zAxisMax.text}"/>
+					</mx:FormItem>
+					<mx:FormItem label="Text BackgroundColor">
+						<mx:ColorPicker id="textBackgroundColor" selectedColor="{dataXML.config.axis.@backgroundcolor}" change="{dataXML.config.axis.@backgroundcolor = textBackgroundColor.selectedColor}" />
+					</mx:FormItem>
+				</mx:Form>
+				<mx:LinkBar x="160.05" y="134" width="108" height="28" dataProvider="viewstack1"/>
+				<mx:ViewStack x="10" y="160" id="viewstack1" width="258.05" height="358">
+					<mx:Canvas label="X-Axis" width="100%" height="100%">
+						<mx:TextInput id="xAxisTitle" text="{dataXML.config.axis.x.@title}" change="{dataXML.config.axis.x.@title = xAxisTitle.text}"  x="91" y="10" width="150"/>
+						<mx:TextInput id="xAxisDZ" text="{dataXML.config.axis.x.@dz}" change="{dataXML.config.axis.x.@dz = xAxisDZ.text}"  x="91" y="38" width="150"/>
+						<mx:TextInput id="xAxisDTitle" text="{dataXML.config.axis.x.@dtitle}" change="{dataXML.config.axis.x.@dtitle = xAxisDTitle.text}"  x="91" y="66" width="150"/>
+						<mx:Label x="10" y="68" text="Title Adjust：" width="73"/>
+						<mx:Label x="10" y="40" text="Label Adjust：" width="73"/>
+						<mx:Label x="10" y="12" text="Title：" width="73"/>
+						<mx:DataGrid x="10" y="94" height="254" width="231" dataProvider="{dataXML.config.axis.x.mark}" editable="true">
+							<mx:columns>
+								<mx:DataGridColumn headerText="Label" dataField="@text"/>
+							</mx:columns>
+						</mx:DataGrid>					
+					</mx:Canvas>
+					<mx:Canvas label="Y轴" width="100%" height="100%">
+						<mx:TextInput id="yAxisTitle" text="{dataXML.config.axis.y.@title}" change="{dataXML.config.axis.y.@title = yAxisTitle.text}"  x="91" y="10" width="150"/>
+						<mx:TextInput id="yAxisDX" text="{dataXML.config.axis.y.@dx}" change="{dataXML.config.axis.y.@dx = yAxisDX.text}"  x="91" y="38" width="150"/>
+						<mx:TextInput id="yAxisDTitle" text="{dataXML.config.axis.y.@dtitle}" change="{dataXML.config.axis.y.@dtitle = yAxisDTitle.text}"  x="91" y="66" width="150"/>
+						<mx:Label x="10" y="68" text="标题校正：" width="73"/>
+						<mx:Label x="10" y="40" text="标注校正：" width="73"/>
+						<mx:Label x="10" y="12" text="标题：" width="73"/>
+						<mx:DataGrid x="10" y="94" height="137" width="231" dataProvider="{dataXML.config.axis.y.mark}" editable="true">
+							<mx:columns>
+								<mx:DataGridColumn headerText="标注" dataField="@text"/>
+							</mx:columns>
+						</mx:DataGrid>					
+					</mx:Canvas>
+					<mx:Canvas label="Z轴" width="100%" height="100%">
+						<mx:TextInput id="zAxisTitle" text="{dataXML.config.axis.z.@title}" change="{dataXML.config.axis.z.@title = zAxisTitle.text}"  x="91" y="10" width="150"/>
+						<mx:TextInput id="zAxisDX" text="{dataXML.config.axis.z.@dx}" change="{dataXML.config.axis.z.@dx = zAxisDX.text}"  x="91" y="38" width="150"/>
+						<mx:TextInput id="zAxisDTitle" text="{dataXML.config.axis.z.@dtitle}" change="{dataXML.config.axis.z.@dtitle = zAxisDTitle.text}"  x="91" y="66" width="150"/>
+						<mx:Label x="10" y="68" text="标题校正：" width="73"/>
+						<mx:Label x="10" y="40" text="标注校正：" width="73"/>
+						<mx:Label x="10" y="12" text="标题：" width="73"/>
+						<mx:DataGrid x="10" y="94" height="137" width="231" dataProvider="{dataXML.config.axis.z.mark}" editable="true">
+							<mx:columns>
+								<mx:DataGridColumn headerText="标注" dataField="@text"/>
+							</mx:columns>
+						</mx:DataGrid>
+					</mx:Canvas>
+				</mx:ViewStack>
+			</mx:Canvas>
+			<mx:Canvas label="Cube" width="100%" height="100%">
+				<mx:Label x="26" y="94" text="Width："/>
+				<mx:TextInput id="widthCube" x="88" y="92" text="{dataXML.cube.@width}" change="{dataXML.cube.@xzoom = widthCube.text}"/>
+				<mx:Label x="26" y="122" text="Depth："/>
+				<mx:DataGrid x="10" y="164" width="256" dataProvider="{dataXML.cube.material}" height="262" editable="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="Value" dataField="@value" width="50"/>
+						<mx:DataGridColumn headerText="ColorMaterial" dataField="@all" itemRenderer="itemrenderer.ColorPickerItemRenderer" />
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:TextInput id="depthCube" x="88" y="120" text="{dataXML.cube.@depth}" change="{dataXML.cube.@xzoom = depthCube.text}" width="160"/>
+			</mx:Canvas>
+			<mx:Canvas label="Data" width="100%" height="100%">
+				<mx:DataGrid x="10" y="51" width="258.05" dataProvider="{dataXML.r}" height="467" editable="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="X" dataField="@x"/>
+						<mx:DataGridColumn headerText="Y" dataField="@y"/>
+						<mx:DataGridColumn headerText="Z" dataField="@z"/>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:Label x="10" y="5" text="xZoom"/>
+				<mx:Label x="103" y="5" text="yZoom"/>
+				<mx:Label x="191" y="5" text="zZoom"/>
+				<mx:TextInput id="zZoomCube" x="191" y="21" text="{dataXML.cube.@zzoom}" change="{dataXML.cube.@xzoom = zZoomCube.text}" width="77.05"/>
+				<mx:TextInput id="xZoomCube" x="10" y="21" text="{dataXML.cube.@xzoom}" change="{dataXML.cube.@xzoom = xZoomCube.text}" width="85"/>
+				<mx:TextInput id="yZoomCube" x="103" y="21" text="{dataXML.cube.@yzoom}" change="{dataXML.cube.@xzoom = yZoomCube.text}" width="80"/>
+			</mx:Canvas>
+		</mx:Accordion>
+	</mx:VBox>
+
+</mx:Application>
