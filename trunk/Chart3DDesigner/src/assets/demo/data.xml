@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ds>
+	<config>
+		<camera focus="50" >
+			<view label="750X438" data="2">
+				<point x="8570" y="10094" z="-26376"/>
+				<rotation x="" y="" z=""/>
+				<position x="-800" y="600" z="" rotationY="90"/>
+			</view>
+		</camera>
+		<axis xcordmax="5000" ycordmax="1800" zcordmax="5000" xmax="10" ymax="10" zmax="10" backgroundcolor="0xFFFFFF">
+			<z count="4" rotation="90" title="Z" wtitle="50" htitle="75" dx="300" dtitle="800">
+				<mark text="1"/>
+				<mark text="3"/>
+				<mark text="5"/>
+				<mark text="7"/>
+				<mark text="9"/>
+			</z>
+			<x count="4" rotation="90" title="X" wtitle="50" htitle="75" dz="500" dtitle="1000">
+				<mark text="1"/>
+				<mark text="3"/>
+				<mark text="5"/>
+				<mark text="7"/>
+				<mark text="9"/>
+			</x>
+			<y count="4" rotation="90" title="Y" wtitle="50" htitle="75" dx="500" dtitle="0">
+				<mark text="1"/>
+				<mark text="3"/>
+				<mark text="5"/>
+				<mark text="7"/>
+				<mark text="9"/>
+			</y>
+		</axis>
+		<cube>
+			<material value="0" 	all="0x448EBA" 	front="0x448EBA" back="0xFF000" 	top="0x4795C4" bottom="0xFF000" left="0xFFAE00" right="0x316788"/>
+			<material value="2" 	all="0x4795C4" 	front="0x448EBA" back="0xFF000" 	top="0x4795C4" bottom="0xFF000" left="0xFFAE00" right="0x316788"/>
+			<material value="3" 	all="0xFF000" 	front="0xE48701" back="0xFF000" 	top="0xE48701" bottom="0xFF000" left="0xFFAE00" right="0xE48701"/>
+			<material value="5" 	all="0x316788" 	front="0x0000FF" back="0xFF000" 	top="0x0000FF" bottom="0xFF000" left="0xFFAE00" right="0x0000FF"/>
+			<material value="10" 	all="0x868DCF" 	front="0x868DCF" back="0x868DCF" 	top="0x4795C4" bottom="0x868DCF" left="0x868DCF" right="0x868DCF"/>
+		</cube>
+	</config>
+
+  <r x="0" y="0" z="3" /> 
+  <r x="1" y="6" z="3" /> 
+  <r x="2" y="7" z="6" /> 
+  <r x="3" y="8" z="7" /> 
+  <r x="4" y="9" z="3" /> 
+  <r x="5" y="0" z="8" /> 
+  <r x="6" y="1" z="9" /> 
+  <r x="7" y="4" z="1" /> 
+  <r x="8" y="5" z="4" /> 
+  <r x="9" y="6" z="2" /> 
+  
+</ds>

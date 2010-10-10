@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" horizontalAlign="center" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+		<mx:Script>
+			<![CDATA[
+				
+				override public function set data(value:Object):void
+				{
+					super.data = value;
+					//ColorColumnColorPicker.selectedColor = data.@all;
+				}
+			]]>
+		</mx:Script>								
+	<mx:ColorPicker selectedColor="{data.@all}" toolTip="All"/>
+	
+	<mx:ColorPicker selectedColor="{data.@front}" toolTip="All" />
+	<mx:ColorPicker selectedColor="{data.@back}" toolTip="Back" />
+	<mx:ColorPicker selectedColor="{data.@top}" toolTip="Top" />
+	<mx:ColorPicker selectedColor="{data.@bottom}" toolTip="Bottom" />
+	<mx:ColorPicker selectedColor="{data.@left}" toolTip="Left" />
+	<mx:ColorPicker selectedColor="{data.@right}" toolTip="Right" />
+	
+</mx:HBox>
