@@ -107,11 +107,7 @@
 		{
 			d3oAll = new DisplayObject3D();
 			
-			var millLayer:ViewportLayer = new ViewportLayer(viewport,null);
-			viewport.containerSprite.addLayer(millLayer);
-			millLayer.addDisplayObject3D(d3oAxis,true); 
-			
-			d3oAxis.addChild(d3oAxisMark);
+			d3oAll.addChild(d3oAxisMark);
 			
 			d3oAll.addChild(d3oAxis);
 			d3oAll.addChild(d3oCube);
@@ -185,14 +181,14 @@
 			var origin:Vertex3D = new Vertex3D(0, 0, 0);
 			
 			// Create a new line for each axis using the different materials and a width of 1.
-			var xAxis:Line3D = new Line3D(axes, xAxisMaterial, 1, origin, new Vertex3D(xMax, 0, 0));
-			axes.addChild(createText("X",xMax,0,0));			
+			var xAxis:Line3D = new Line3D(axes, xAxisMaterial, 1, origin, new Vertex3D(xMax*0.2, 0, 0));
+			axes.addChild(createText("X",xMax*0.2,0,0));			
 
-			var yAxis:Line3D = new Line3D(axes, yAxisMaterial, 1, origin, new Vertex3D(0, yMax, 0));
-			axes.addChild(createText("Y",0,yMax,0,-45));			
+			var yAxis:Line3D = new Line3D(axes, yAxisMaterial, 1, origin, new Vertex3D(0, yMax*0.2, 0));
+			axes.addChild(createText("Y",0,yMax*0.2,0,-45));			
 
-			var zAxis:Line3D = new Line3D(axes, zAxisMaterial, 1, origin, new Vertex3D(0, 0, zMax));
-			axes.addChild(createText("Z",0,0,zMax,90));			
+			var zAxis:Line3D = new Line3D(axes, zAxisMaterial, 1, origin, new Vertex3D(0, 0, zMax*0.2));
+			axes.addChild(createText("Z",0,0,zMax*0.2,90));			
 			
 			// Add lines to the Lines3D container
 			axes.addLine(xAxis);
@@ -200,7 +196,6 @@
 			axes.addLine(zAxis);
 			
 			// 缩小并以到接近摄像头的顶点
-			axes.scale = 0.2;
 			axes.x = axes.x + xMax;
 			//axes.y = axes.y + yMax;
 			axes.z = axes.z + zMax;
@@ -215,59 +210,9 @@
 			var yMax:Number = axis.@ycordmax;
 			var zMax:Number = axis.@zcordmax;
 			
-			var dep:Number = 80;
-			
-			var mc:MovieClip = new MovieClip();
-			mc.graphics.beginFill(0xFF000);
-			mc.graphics.drawRect(0, 0, xMax, yMax);
-			mc.graphics.endFill();
-			var mat:MovieMaterial = new MovieMaterial(mc, false, false, true,new Rectangle(0, 0, 500, 200));
-			
-			//mat.doubleSided = true;
-			mat.smooth = true;
-
-			var materialList:MaterialsList = new MaterialsList();
-			
-			//materialList.addMaterial(new ColorMaterial(0x4795C4,1,true), "all");
-			materialList.addMaterial(new ColorMaterial(0xFF000,1,true), "top");
-			materialList.addMaterial(new ColorMaterial(0xFF000,1,true), "bottom");
-			materialList.addMaterial(new ColorMaterial(0x316788,1,true), "front");
-			materialList.addMaterial(new ColorMaterial(0x4795C4,1,true), "back");
-			//materialList.addMaterial(mat, "back");
-			materialList.addMaterial(new ColorMaterial(0xFFAE00,1,true), "left");
-			materialList.addMaterial(new ColorMaterial(0x316788,1,true), "right");
-
-			
-			var cubeXY:Cube = new Cube(materialList, xMax, dep, yMax, 1, 1, 1);
-			cubeXY.x = xMax/2;
-			cubeXY.z = -dep/2;
-			cubeXY.y = yMax / 2;
-
-			var cubeYZ:Cube = new Cube(materialList, dep, zMax, yMax, 6, 6, 6);
-			cubeYZ.x = -dep/2;
-			cubeYZ.z = zMax/2;
-			cubeYZ.y = yMax / 2;
-			
-			var cubeZX:Cube = new Cube(materialList, xMax, zMax, dep, 6, 6, 6);
-			cubeZX.x = xMax/2;
-			cubeZX.z = zMax / 2;
-			cubeZX.y = -dep/2;
-			
-			
-			this.d3oAxisMark.addChild(cubeXY);
-			this.d3oAxisMark.addChild(cubeYZ);
-			this.d3oAxisMark.addChild(cubeZX);
-		}
-		
-		public function createAxisMarkFromXML1(axis:XML):void
-		{
-			var xMax:Number = axis.@xcordmax;
-			var yMax:Number = axis.@ycordmax;
-			var zMax:Number = axis.@zcordmax;
-			
 			var fillcolor:Number = axis.@backgroundcolor;
 
-			// Z轴
+			// Z轴 -----------------------------------------------------------------
 			var zXML:XML = axis..z[0];
 			var zCount:int = zXML.@count;
 			var zRotation:int = zXML.@rotation;
@@ -281,7 +226,8 @@
 			// 尺寸标注，根据标注数目分隔长度
 			for(var iZ:int=0;iZ<=zCount;iZ++)
 			{
-				this.createText(zXML.mark[iZ].@text, xMax + zDx, 0, iZ*(zMax/zCount),zRotation);
+				var lblZ:Text3D = this.createText(zXML.mark[iZ].@text, xMax + zDx, 0, iZ*(zMax/zCount),zRotation);
+				d3oAxisMark.addChild(lblZ);
 			}
 			
 			// 坐标轴的标题
@@ -292,7 +238,7 @@
 			pZ.scale = 5;
 			pZ.rotationY +=270;
 			
-			// X轴
+			// X轴 -----------------------------------------------------------------
 			var xXML:XML = axis..x[0];
 			var xCount:int = xXML.@count;
 			var xRotation:int = xXML.@rotation;
@@ -304,7 +250,8 @@
 			
 			for(var iX:int=0;iX<=xCount;iX++)
 			{
-				this.createText(xXML.mark[iX].@text, iX*(xMax/xCount), 0, zMax + xDz, xRotation);
+				var lblX:Text3D = this.createText(xXML.mark[iX].@text, iX*(xMax/xCount), 0, zMax + xDz, xRotation);
+				d3oAxisMark.addChild(lblX);
 			}
 			
 			var pX:Plane = this.createPlane(fillcolor,xWTitle,xHTitle,xTitle,new TextFormat(null,"58"));
@@ -315,7 +262,7 @@
 			pX.rotationY +=270;
 			
 			
-			//Y轴
+			//Y轴 -----------------------------------------------------------------
 			var yXML:XML = axis..y[0];
 			var yCount:int = yXML.@count;
 			var yRotation:int = yXML.@rotation;
@@ -327,7 +274,8 @@
 			
 			for(var iY:int=0;iY<=yCount;iY++)
 			{
-				this.createText(yXML.mark[iY].@text, xMax + yDx, iY*(yMax/yCount), 0, yRotation);
+				var lblY:Text3D = this.createText(yXML.mark[iY].@text, xMax + yDx, iY*(yMax/yCount), 0, yRotation);
+				d3oAxisMark.addChild(lblY);
 			}
 			
 			var pY:Plane = this.createPlane(fillcolor,xWTitle,xHTitle,yTitle,new TextFormat(null,"58"));
@@ -337,13 +285,19 @@
 			pY.scale = 5;
 			pY.rotationY +=270;
 			
+			// addChild
+			d3oAxisMark.addChild(pX);
+			d3oAxisMark.addChild(pY);
+			d3oAxisMark.addChild(pZ);
+			
+
 			// 创建2个平面材质，绘制网格时交替使用
 			var materialA:ColorMaterial = new ColorMaterial(0x56526A);
 			var materialB:ColorMaterial = new ColorMaterial(0x6A6A86);
 			materialA.doubleSided = true;
 			materialB.doubleSided = true;
 			
-			// 在X-Z正象限创建5X4网格            
+			// 1. 在X-Z正象限创建5X4网格            
 			var materialRow:ColorMaterial = materialA;
 			var materialCol:ColorMaterial = materialA;
 			
@@ -388,7 +342,7 @@
 			}
 			
 			
-			// 在X-Y正象限创建5X2网格（10000x9000）
+			// 2. 在X-Y正象限创建5X2网格（10000x9000）
 			materialA = new ColorMaterial(0x0000FF);
 			materialB = new ColorMaterial(0xFF0000);
 			materialA.doubleSided = true;
@@ -421,12 +375,12 @@
 			}	
 
 			// 在Z-Y正象限创建5X2网格（10000x9000）
-			for (var izZY:int = 0; izZY <= zCount+1; izZY++)
+			for (var izZY:int = 0; izZY <= yCount+1; izZY++)
 			{
 				
-				for (var iyZY:int = 0; iyZY <= yCount+1; iyZY++)
+				for (var iyZY:int = 0; iyZY <= zCount+1; iyZY++)
 				{
-					var yAxis:Line3D = new Line3D(axes, yAxisMaterial, 1, new Vertex3D(0, 0, iyZY * widthGrid), new Vertex3D(0, yMax, iyZY * widthGrid));
+					var yAxis:Line3D = new Line3D(axes, yAxisMaterial, 1, new Vertex3D(0, 0, iyZY * depthGrid), new Vertex3D(0, yMax, iyZY * depthGrid));
 					axes.addLine(yAxis);
 				}
 				var zAxis:Line3D = new Line3D(axes, zAxisMaterial, 1, new Vertex3D(0, izZY * heightGrid , 0), new Vertex3D(0, izZY * heightGrid, zMax));
@@ -537,7 +491,7 @@
 			text3D.y = y;
 			text3D.z = z;
 			text3D.localRotationY = rotationY;
-			text3D.scale = 20;
+			text3D.scale = 2;
 			
 			//show outline
 			text3D.material.lineThickness = 2;
@@ -614,7 +568,6 @@
 			mat.tiled = true;
 			
 			var p:Plane = new Plane(mat, width, height);
-			d3oAxisMark.addChild(p);
 			
 			return p;
 		}
