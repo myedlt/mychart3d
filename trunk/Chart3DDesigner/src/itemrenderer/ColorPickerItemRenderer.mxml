@@ -12,7 +12,7 @@
 		</mx:Script>								
 	<mx:ColorPicker selectedColor="{data.@all}" toolTip="All"/>
 	
-	<mx:ColorPicker selectedColor="{data.@front}" toolTip="All" />
+	<mx:ColorPicker selectedColor="{data.@front}" toolTip="Front" />
 	<mx:ColorPicker selectedColor="{data.@back}" toolTip="Back" />
 	<mx:ColorPicker selectedColor="{data.@top}" toolTip="Top" />
 	<mx:ColorPicker selectedColor="{data.@bottom}" toolTip="Bottom" />

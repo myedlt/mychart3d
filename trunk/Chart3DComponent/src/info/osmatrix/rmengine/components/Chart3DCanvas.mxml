@@ -49,7 +49,7 @@
 				
 				// 绘制图形
 				chart3D.createAxisFromXML(configXML.axis[0]);
-				chart3D.createAxisMarkFromXML1(configXML.axis[0]);
+				chart3D.createAxisMarkFromXML(configXML.axis[0]);
 				chart3D.setCameraFromXML(configXML.camera[0].view[0]);
 				chart3D.setPositionFromXML(configXML.camera[0].view[0].position[0]);
 				

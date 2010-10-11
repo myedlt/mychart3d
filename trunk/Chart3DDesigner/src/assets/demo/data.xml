@@ -5,18 +5,23 @@
 			<view label="750X438" data="2">
 				<point x="8570" y="10094" z="-26376"/>
 				<rotation x="" y="" z=""/>
-				<position x="-800" y="600" z="" rotationY="90"/>
+				<position x="-800" y="600" z="0" rotationY="90"/>
 			</view>
 		</camera>
 		<axis xcordmax="5000" ycordmax="1800" zcordmax="5000" xmax="10" ymax="10" zmax="10" backgroundcolor="0xFFFFFF">
-			<z count="4" rotation="90" title="Z" wtitle="50" htitle="75" dx="300" dtitle="800">
+			<z count="9" rotation="90" title="Z" wtitle="50" htitle="75" dx="300" dtitle="800">
+				<mark text="0"/>
 				<mark text="1"/>
+				<mark text="2"/>
 				<mark text="3"/>
+				<mark text="4"/>
 				<mark text="5"/>
+				<mark text="6"/>
 				<mark text="7"/>
+				<mark text="8"/>
 				<mark text="9"/>
 			</z>
-			<x count="4" rotation="90" title="X" wtitle="50" htitle="75" dz="500" dtitle="1000">
+			<x count="4" rotation="90" title="X" wtitle="50" htitle="75" dz="500" dtitle="300">
 				<mark text="1"/>
 				<mark text="3"/>
 				<mark text="5"/>

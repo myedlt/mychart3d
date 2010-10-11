@@ -40,14 +40,20 @@
 		]]>
 	</mx:Script>
 	
-	<chart3d:Chart3DCanvas id="chart_11" borderStyle="solid" width="864" height="522" isDebug="true" />
+	<mx:TabNavigator width="889" height="523">
+		<mx:Canvas label="Chart" width="100%" height="100%" >
+			<chart3d:Chart3DCanvas  id="chart_11" borderStyle="solid" width="864" height="480" isDebug="true"  x="13" y="0"/>
+		</mx:Canvas>
+		<mx:Canvas label="Data" width="100%" height="100%" >
+			<mx:TextArea id="txtXML" text="{dataXML.toXMLString()}" width="867" height="480" x="10" y="0"/>		
+		</mx:Canvas>
+	</mx:TabNavigator>
 	<mx:VBox>
-		<mx:HBox width="100%">	
+		<mx:HBox width="100%" horizontalAlign="right" verticalAlign="middle" horizontalGap="3">	
 			<mx:Button x="966" y="10" label="reload" click="reloadXML();"/>
-			<mx:Button x="859" y="10" label="unload" click="chart_11.create3D()"/>
 		</mx:HBox>
 		
-		<mx:Accordion x="733.95" y="37" width="280.05" height="613">
+		<mx:Accordion x="733.95" y="37" width="280.05" height="494">
 			<mx:VBox label="Camera" width="100%" height="100%">
 				<mx:HBox>
 					<mx:Label text="Focus:" width="74"/>
@@ -94,22 +100,22 @@
 			</mx:VBox>
 			
 			<mx:Canvas label="Axis" width="100%" height="100%">
-				<mx:Form x="0" y="0" height="137" width="100%">
-					<mx:FormItem label="X Max">
-						<mx:TextInput id="xAxisMax" text="{dataXML.config.axis.@xmax}" change="{dataXML.config.axis.@xmax = xAxisMax.text}"/>
+				<mx:Form x="10" y="0" height="137" width="258">
+					<mx:FormItem label="X Max" width="231">
+						<mx:TextInput id="xAxisMax" text="{dataXML.config.axis.@xmax}" change="{dataXML.config.axis.@xmax = xAxisMax.text}" width="84"/>
 					</mx:FormItem>
-					<mx:FormItem label="Y Max">
-						<mx:TextInput id="yAxisMax" text="{dataXML.config.axis.@ymax}" change="{dataXML.config.axis.@ymax = yAxisMax.text}"/>
+					<mx:FormItem label="Y Max" width="230">
+						<mx:TextInput id="yAxisMax" text="{dataXML.config.axis.@ymax}" change="{dataXML.config.axis.@ymax = yAxisMax.text}" width="83"/>
 					</mx:FormItem>
-					<mx:FormItem label="Z Max">
-						<mx:TextInput id="zAxisMax" text="{dataXML.config.axis.@zmax}" change="{dataXML.config.axis.@zmax = zAxisMax.text}"/>
+					<mx:FormItem label="Z Max" width="231">
+						<mx:TextInput id="zAxisMax" text="{dataXML.config.axis.@zmax}" change="{dataXML.config.axis.@zmax = zAxisMax.text}" width="84"/>
 					</mx:FormItem>
 					<mx:FormItem label="Text BackgroundColor">
 						<mx:ColorPicker id="textBackgroundColor" selectedColor="{dataXML.config.axis.@backgroundcolor}" change="{dataXML.config.axis.@backgroundcolor = textBackgroundColor.selectedColor}" />
 					</mx:FormItem>
 				</mx:Form>
-				<mx:LinkBar x="160.05" y="134" width="108" height="28" dataProvider="viewstack1"/>
-				<mx:ViewStack x="10" y="160" id="viewstack1" width="258.05" height="358">
+				<mx:LinkBar x="87.05" y="137" width="169.95" height="23" dataProvider="viewstack1"/>
+				<mx:ViewStack x="10" y="160" id="viewstack1" width="258" height="239">
 					<mx:Canvas label="X-Axis" width="100%" height="100%">
 						<mx:TextInput id="xAxisTitle" text="{dataXML.config.axis.x.@title}" change="{dataXML.config.axis.x.@title = xAxisTitle.text}"  x="91" y="10" width="150"/>
 						<mx:TextInput id="xAxisDZ" text="{dataXML.config.axis.x.@dz}" change="{dataXML.config.axis.x.@dz = xAxisDZ.text}"  x="91" y="38" width="150"/>
@@ -117,13 +123,13 @@
 						<mx:Label x="10" y="68" text="Title Adjust：" width="73"/>
 						<mx:Label x="10" y="40" text="Label Adjust：" width="73"/>
 						<mx:Label x="10" y="12" text="Title：" width="73"/>
-						<mx:DataGrid x="10" y="94" height="254" width="231" dataProvider="{dataXML.config.axis.x.mark}" editable="true">
+						<mx:DataGrid x="10" y="94" height="135" width="231" dataProvider="{dataXML.config.axis.x.mark}" editable="true">
 							<mx:columns>
 								<mx:DataGridColumn headerText="Label" dataField="@text"/>
 							</mx:columns>
 						</mx:DataGrid>					
 					</mx:Canvas>
-					<mx:Canvas label="Y轴" width="100%" height="100%">
+					<mx:Canvas label="Y-Axis" width="100%" height="100%">
 						<mx:TextInput id="yAxisTitle" text="{dataXML.config.axis.y.@title}" change="{dataXML.config.axis.y.@title = yAxisTitle.text}"  x="91" y="10" width="150"/>
 						<mx:TextInput id="yAxisDX" text="{dataXML.config.axis.y.@dx}" change="{dataXML.config.axis.y.@dx = yAxisDX.text}"  x="91" y="38" width="150"/>
 						<mx:TextInput id="yAxisDTitle" text="{dataXML.config.axis.y.@dtitle}" change="{dataXML.config.axis.y.@dtitle = yAxisDTitle.text}"  x="91" y="66" width="150"/>
@@ -136,7 +142,7 @@
 							</mx:columns>
 						</mx:DataGrid>					
 					</mx:Canvas>
-					<mx:Canvas label="Z轴" width="100%" height="100%">
+					<mx:Canvas label="Z-Axis" width="100%" height="100%">
 						<mx:TextInput id="zAxisTitle" text="{dataXML.config.axis.z.@title}" change="{dataXML.config.axis.z.@title = zAxisTitle.text}"  x="91" y="10" width="150"/>
 						<mx:TextInput id="zAxisDX" text="{dataXML.config.axis.z.@dx}" change="{dataXML.config.axis.z.@dx = zAxisDX.text}"  x="91" y="38" width="150"/>
 						<mx:TextInput id="zAxisDTitle" text="{dataXML.config.axis.z.@dtitle}" change="{dataXML.config.axis.z.@dtitle = zAxisDTitle.text}"  x="91" y="66" width="150"/>
@@ -152,31 +158,21 @@
 				</mx:ViewStack>
 			</mx:Canvas>
 			<mx:Canvas label="Cube" width="100%" height="100%">
-				<mx:Label x="26" y="94" text="Width："/>
-				<mx:TextInput id="widthCube" x="88" y="92" text="{dataXML.cube.@width}" change="{dataXML.cube.@xzoom = widthCube.text}"/>
-				<mx:Label x="26" y="122" text="Depth："/>
-				<mx:DataGrid x="10" y="164" width="256" dataProvider="{dataXML.cube.material}" height="262" editable="true">
+				<mx:DataGrid x="10" y="10" width="256" dataProvider="{dataXML.config.cube.material}" height="262" editable="true">
 					<mx:columns>
 						<mx:DataGridColumn headerText="Value" dataField="@value" width="50"/>
 						<mx:DataGridColumn headerText="ColorMaterial" dataField="@all" itemRenderer="itemrenderer.ColorPickerItemRenderer" />
 					</mx:columns>
 				</mx:DataGrid>
-				<mx:TextInput id="depthCube" x="88" y="120" text="{dataXML.cube.@depth}" change="{dataXML.cube.@xzoom = depthCube.text}" width="160"/>
 			</mx:Canvas>
 			<mx:Canvas label="Data" width="100%" height="100%">
-				<mx:DataGrid x="10" y="51" width="258.05" dataProvider="{dataXML.r}" height="467" editable="true">
+				<mx:DataGrid x="9.95" y="10" width="258.05" dataProvider="{dataXML.r}" height="386" editable="true">
 					<mx:columns>
 						<mx:DataGridColumn headerText="X" dataField="@x"/>
 						<mx:DataGridColumn headerText="Y" dataField="@y"/>
 						<mx:DataGridColumn headerText="Z" dataField="@z"/>
 					</mx:columns>
 				</mx:DataGrid>
-				<mx:Label x="10" y="5" text="xZoom"/>
-				<mx:Label x="103" y="5" text="yZoom"/>
-				<mx:Label x="191" y="5" text="zZoom"/>
-				<mx:TextInput id="zZoomCube" x="191" y="21" text="{dataXML.cube.@zzoom}" change="{dataXML.cube.@xzoom = zZoomCube.text}" width="77.05"/>
-				<mx:TextInput id="xZoomCube" x="10" y="21" text="{dataXML.cube.@xzoom}" change="{dataXML.cube.@xzoom = xZoomCube.text}" width="85"/>
-				<mx:TextInput id="yZoomCube" x="103" y="21" text="{dataXML.cube.@yzoom}" change="{dataXML.cube.@xzoom = yZoomCube.text}" width="80"/>
 			</mx:Canvas>
 		</mx:Accordion>
 	</mx:VBox>
