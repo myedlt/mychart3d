@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+				xmlns:chart3d="info.osmatrix.rmengine.components.*" applicationComplete="application1_applicationCompleteHandler(event)" width="1024" height="768">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.NumericStepperEvent;
+			
+			[Bindable]
+			public var confXML:XML; 
+
+			protected function application1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+
+				loadConfigXML();
+				
+			}
+
+			private function reloadXML():void
+			{
+				chart_11.create3D();
+				chart_11.updateConfig(confXML);
+				chart_11.updateData(dataXML);
+			}
+			
+			private function loadConfigXML():void
+			{
+				var urlReq:URLRequest = new URLRequest("assets/debug/config.xml");
+				var urlLoader:URLLoader = new URLLoader();
+				
+				urlLoader.addEventListener(Event.COMPLETE, configXMLComplete);
+				urlLoader.load(urlReq);			
+				
+			}
+			
+			private function configXMLComplete(evt:Event):void
+			{
+				confXML = XML(evt.target.data);
+				
+				//
+				reloadXML();
+				
+				// 配置文件加载成功后再加载数据文件
+				//loadDataXML();
+			}			
+
+			protected function zAxisTitle_changeHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				var i:int = 0;
+			}
+
+		]]>
+	</mx:Script>
+	<mx:XML source="assets/debug/data.xml" id="dataXML" />
+	<mx:XML source="assets/debug/config.xml" id="conf1XML" />
+	
+	<chart3d:Chart3DCanvas id="chart_11" x="9.95" y="37" borderStyle="solid" width="716" height="452"
+						   isDebug="true" >
+	</chart3d:Chart3DCanvas>
+	<mx:Accordion x="733.95" y="37" width="280.05" height="613">
+		<mx:VBox label="Camera" width="100%" height="100%">
+			<mx:HBox>
+				<mx:Label text="Focus:" width="74"/>
+				<mx:TextInput id="focusCamera" width="149" text="{confXML.camera.@focus}" change="{confXML.camera.@focus = focusCamera.text}" />
+			</mx:HBox>
+			
+			<mx:HBox width="100%" backgroundColor="#E26363">
+				<mx:Label text="摄像头位置"/>
+			</mx:HBox>
+			
+			<mx:VBox label="Camera" horizontalAlign="center" verticalGap="2" width="100%" x="0" y="27">
+				<mx:HBox>
+					<mx:Label text="X:"/>
+					<mx:TextInput id="xCamera" width="76" text="{confXML.camera.view[2].point.@x}" change="{confXML.camera.view[2].point.@x = xCamera.text}" />
+				</mx:HBox>
+				<mx:HBox>
+					<mx:Label text="Y:"/>
+					<mx:TextInput id="yCamera" width="76" text="{confXML.camera.view[2].point.@y}" change="{confXML.camera.view[2].point.@y = yCamera.text}" />
+				</mx:HBox>
+				<mx:HBox>
+					<mx:Label text="Z:"/>
+					<mx:TextInput id="zCamera" width="77" text="{confXML.camera.view[2].point.@z}" change="{confXML.camera.view[2].point.@z = zCamera.text}" />
+				</mx:HBox>
+			</mx:VBox>
+			
+			<mx:HBox width="100%" backgroundColor="#E26363">
+				<mx:Label text="3D对象位置"/>
+			</mx:HBox>
+			
+			<mx:VBox label="D3oAll" horizontalAlign="center" verticalGap="2" width="100%" x="0" y="27">
+				<mx:HBox>
+					<mx:Label text="X:"/>
+					<mx:TextInput id="xD3oAll" width="76" text="{confXML.camera.view[2].position.@x}" change="{confXML.camera.view[2].position.@x = xD3oAll.text}" />
+				</mx:HBox>
+				<mx:HBox>
+					<mx:Label text="Y:"/>
+					<mx:TextInput id="yD3oAll" width="76" text="{confXML.camera.view[2].position.@y}" change="{confXML.camera.view[2].position.@y = yD3oAll.text}" />
+				</mx:HBox>
+				<mx:HBox>
+					<mx:Label text="Z:"/>
+					<mx:TextInput id="zD3oAll" width="77" text="{confXML.camera.view[2].position.@z}" change="{confXML.camera.view[2].position.@z = zD3oAll.text}" />
+				</mx:HBox>
+			</mx:VBox>						
+		</mx:VBox>
+
+		<mx:Canvas label="Axis" width="100%" height="100%">
+			<mx:Form x="0" y="0" height="137" width="100%">
+				<mx:FormItem label="X最大值">
+					<mx:TextInput id="xAxisMax" text="{confXML.axis.@xmax}" change="{confXML.axis.@xmax = xAxisMax.text}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Y最大值">
+					<mx:TextInput id="yAxisMax" text="{confXML.axis.@ymax}" change="{confXML.axis.@ymax = yAxisMax.text}"/>
+				</mx:FormItem>
+				<mx:FormItem label="Z最大值">
+					<mx:TextInput id="zAxisMax" text="{confXML.axis.@zmax}" change="{confXML.axis.@zmax = zAxisMax.text}"/>
+				</mx:FormItem>
+				<mx:FormItem label="文本背景色">
+					<mx:ColorPicker id="textBackgroundColor" selectedColor="{confXML.axis.@backgroundcolor}" change="{confXML.axis.@backgroundcolor = textBackgroundColor.selectedColor}" />
+				</mx:FormItem>
+			</mx:Form>
+			<mx:LinkBar x="160.05" y="134" width="108" height="28" dataProvider="viewstack1"/>
+			<mx:ViewStack x="10" y="160" id="viewstack1" width="258.05" height="358">
+				<mx:Canvas label="X轴" width="100%" height="100%">
+					<mx:TextInput id="xAxisTitle" text="{confXML.axis.x.@title}" change="{confXML.axis.x.@title = xAxisTitle.text}"  x="91" y="10" width="150"/>
+					<mx:TextInput id="xAxisDZ" text="{confXML.axis.x.@dz}" change="{confXML.axis.x.@dz = xAxisDZ.text}"  x="91" y="38" width="150"/>
+					<mx:TextInput id="xAxisDTitle" text="{confXML.axis.x.@dtitle}" change="{confXML.axis.x.@dtitle = xAxisDTitle.text}"  x="91" y="66" width="150"/>
+					<mx:Label x="10" y="68" text="标题校正：" width="73"/>
+					<mx:Label x="10" y="40" text="标注校正：" width="73"/>
+					<mx:Label x="10" y="12" text="标题：" width="73"/>
+					<mx:DataGrid x="10" y="94" height="254" width="231" dataProvider="{confXML.axis.x.mark}" editable="true">
+						<mx:columns>
+							<mx:DataGridColumn headerText="标注" dataField="@text"/>
+						</mx:columns>
+					</mx:DataGrid>					
+				</mx:Canvas>
+				<mx:Canvas label="Y轴" width="100%" height="100%">
+					<mx:TextInput id="yAxisTitle" text="{confXML.axis.y.@title}" change="{confXML.axis.y.@title = yAxisTitle.text}"  x="91" y="10" width="150"/>
+					<mx:TextInput id="yAxisDX" text="{confXML.axis.y.@dx}" change="{confXML.axis.y.@dx = yAxisDX.text}"  x="91" y="38" width="150"/>
+					<mx:TextInput id="yAxisDTitle" text="{confXML.axis.y.@dtitle}" change="{confXML.axis.y.@dtitle = yAxisDTitle.text}"  x="91" y="66" width="150"/>
+					<mx:Label x="10" y="68" text="标题校正：" width="73"/>
+					<mx:Label x="10" y="40" text="标注校正：" width="73"/>
+					<mx:Label x="10" y="12" text="标题：" width="73"/>
+					<mx:DataGrid x="10" y="94" height="137" width="231" dataProvider="{confXML.axis.y.mark}" editable="true">
+						<mx:columns>
+							<mx:DataGridColumn headerText="标注" dataField="@text"/>
+						</mx:columns>
+					</mx:DataGrid>					
+				</mx:Canvas>
+				<mx:Canvas label="Z轴" width="100%" height="100%">
+					<mx:TextInput id="zAxisTitle" text="{confXML.axis.z.@title}" change="{confXML.axis.z.@title = zAxisTitle.text}"  x="91" y="10" width="150"/>
+					<mx:TextInput id="zAxisDX" text="{confXML.axis.z.@dx}" change="{confXML.axis.z.@dx = zAxisDX.text}"  x="91" y="38" width="150"/>
+					<mx:TextInput id="zAxisDTitle" text="{confXML.axis.z.@dtitle}" change="{confXML.axis.z.@dtitle = zAxisDTitle.text}"  x="91" y="66" width="150"/>
+					<mx:Label x="10" y="68" text="标题校正：" width="73"/>
+					<mx:Label x="10" y="40" text="标注校正：" width="73"/>
+					<mx:Label x="10" y="12" text="标题：" width="73"/>
+					<mx:DataGrid x="10" y="94" height="137" width="231" dataProvider="{confXML.axis.z.mark}" editable="true">
+						<mx:columns>
+							<mx:DataGridColumn headerText="标注" dataField="@text"/>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:Canvas>
+			</mx:ViewStack>
+		</mx:Canvas>
+		<mx:Canvas label="Cube" width="100%" height="100%">
+			<mx:Label x="26" y="94" text="宽："/>
+			<mx:TextInput id="widthCube" x="88" y="92" text="{dataXML.cube.@width}" change="{dataXML.cube.@xzoom = widthCube.text}"/>
+			<mx:Label x="26" y="122" text="深："/>
+			<mx:DataGrid x="10" y="164" width="256" dataProvider="{dataXML.cube.material}" height="262">
+				<mx:columns>
+					<mx:DataGridColumn headerText="数值" dataField="@value" width="50"/>
+					<mx:DataGridColumn headerText="ColorMaterial" dataField="@all" itemRenderer="itemrenderer.ColorPickerItemRenderer" />
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:TextInput id="depthCube" x="88" y="120" text="{dataXML.cube.@depth}" change="{dataXML.cube.@xzoom = depthCube.text}" width="160"/>
+		</mx:Canvas>
+		<mx:Canvas label="数据" width="100%" height="100%">
+			<mx:DataGrid x="10" y="51" width="258.05" dataProvider="{dataXML.r}" height="467">
+				<mx:columns>
+					<mx:DataGridColumn headerText="X" dataField="@x"/>
+					<mx:DataGridColumn headerText="Y" dataField="@y"/>
+					<mx:DataGridColumn headerText="Z" dataField="@z"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Label x="10" y="5" text="xZoom"/>
+			<mx:Label x="103" y="5" text="yZoom"/>
+			<mx:Label x="191" y="5" text="zZoom"/>
+			<mx:TextInput id="zZoomCube" x="191" y="21" text="{dataXML.cube.@zzoom}" change="{dataXML.cube.@xzoom = zZoomCube.text}" width="77.05"/>
+			<mx:TextInput id="xZoomCube" x="10" y="21" text="{dataXML.cube.@xzoom}" change="{dataXML.cube.@xzoom = xZoomCube.text}" width="85"/>
+			<mx:TextInput id="yZoomCube" x="103" y="21" text="{dataXML.cube.@yzoom}" change="{dataXML.cube.@xzoom = yZoomCube.text}" width="80"/>
+		</mx:Canvas>
+	</mx:Accordion>
+	<mx:Button x="966" y="10" label="重载" click="reloadXML();"/>
+	<mx:Button x="859" y="10" label="卸载" click="chart_11.create3D()"/>
+	<mx:Button x="910" y="10" label="按钮"/>
+</mx:Application>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" minWidth="955" minHeight="600" width="1269.8484" height="616.9697">
+	<mx:XML id="data2DJQ" source="assets/chart03/dataC.xml" />
+	<mx:Script>
+		<![CDATA[
+			
+		]]>
+	</mx:Script>
+	<mx:Array id="chartGridLines">
+		<mx:GridLines direction="both" />
+	</mx:Array>
+		
+	<mx:ViewStack x="24" y="69" id="viewstack1" width="1229" height="527">
+		<mx:HBox label="相位-均值(放电幅值)" width="100%" height="100%">
+			<mx:ColumnChart id="chartAvg" width="80%" height="100%" 
+							dataProvider="{data2DJQ.r}" 
+							showDataTips="true" backgroundElements="{chartGridLines}">
+				<mx:verticalAxis>
+					<mx:LinearAxis title="放电幅值(mV)" minimum="0" maximum="200" interval="50" />
+				</mx:verticalAxis>				
+				<mx:horizontalAxis>
+					<mx:LinearAxis id="phaseAxis" title="相位" minimum="0" maximum="100" interval="25"/>
+				</mx:horizontalAxis>
+				<mx:series>
+					<mx:ColumnSeries xField="@x" yField="@z" />
+				</mx:series>
+				<mx:horizontalAxisRenderers> 
+					<mx:AxisRenderer axis="{phaseAxis}" styleName="myAxisStyle"> 
+						<mx:tickStroke>
+							<mx:Stroke color="#999966" weight="1"/> 
+						</mx:tickStroke> 
+					</mx:AxisRenderer> 
+				</mx:horizontalAxisRenderers>
+				<mx:fill>
+					<mx:LinearGradient>
+						<mx:entries> 
+							<mx:GradientEntry  
+								color="0xC5C551"  
+								ratio="0"  
+								alpha="1"/> 
+							<mx:GradientEntry  
+								color="0xFEFE24"  
+								ratio=".33"  
+								alpha="1"/> 
+							<mx:GradientEntry  
+								color="0xECEC21"  
+								ratio=".66"  
+								alpha="1"/> 
+						</mx:entries> 						
+					</mx:LinearGradient>
+				</mx:fill>
+			</mx:ColumnChart>
+			<mx:DataGrid height="100%" width="20%" dataProvider="{data2DJQ.r}">
+				<mx:columns>
+					<mx:DataGridColumn headerText="相位" dataField="@x"/>
+					<mx:DataGridColumn headerText="放电幅值均值" dataField="@z"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:HBox>
+		<mx:Canvas label="相位-计数(放电阀值)" width="100%" height="100%">
+			<mx:ColumnChart id="chartCount" width="80%" height="100%"  showDataTips="true" type="clustered">
+				<mx:horizontalAxis>
+					<mx:LinearAxis title="相位"/>
+				</mx:horizontalAxis>
+				
+				<mx:verticalAxis>
+					<mx:LinearAxis title="阀值计数" id="axisV" minimum="0" maximum="200" interval="50" />
+				</mx:verticalAxis>
+				
+				<mx:series>
+					<mx:ColumnSeries displayName="阀值计数" xField="key" yField="value" />
+				</mx:series>
+			</mx:ColumnChart>
+			<mx:DataGrid width="80%" height="100%" >
+			<mx:columns>
+				<mx:DataGridColumn headerText="列 1" dataField="col1"/>
+				<mx:DataGridColumn headerText="列 2" dataField="col2"/>
+			</mx:columns>
+		</mx:DataGrid>
+		</mx:Canvas>
+	</mx:ViewStack>
+	<mx:LinkBar x="1017" y="21" dataProvider="viewstack1">
+	</mx:LinkBar>
+	
+</mx:Application>

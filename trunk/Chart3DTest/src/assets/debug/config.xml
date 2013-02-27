@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+
+	<camera focus="50" default="0">
+		<view label="400X300" data="0">
+			<point x="189906" y="150000" z="-385000"/>
+			<rotation x="30" y="-30" z="0"/>
+			<position x="-8000" y="0" z="0" rotationY="90"/>
+		</view>
+		<view label="二维：x-y" data="1">
+			<point x="78496" y="133859" z="-256749"/>
+			<rotation x="27" y="-17" z="0"/>
+		</view>
+
+		<view label="750X438" data="2">
+			<point x="109906" y="100000" z="-255000"/>
+			<rotation x="" y="" z=""/>
+			<position x="-8000" y="6000" z="" rotationY="90"/>
+		</view>
+	</camera>
+	<axis xmax="50000" ymax="18000" zmax="50000" backgroundcolor="0xFFFFFF">
+		<z count="5" rotation="90" title="Z" dx="3000" dtitle="8000">
+			<mark text="  0"/>
+			<mark text=" 20"/>
+			<mark text=" 40"/>
+			<mark text=" 60"/>
+			<mark text=" 80"/>
+			<mark text="100"/>
+		</z>
+		<x count="4" rotation="90" title="X" dz="5000" dtitle="10000">
+			<mark text="  0"/>
+			<mark text=" 25"/>
+			<mark text=" 50"/>
+			<mark text=" 75"/>
+			<mark text="100"/>
+		</x>
+		<y count="4" rotation="90" title="Y" dx="5000" dtitle="8000">
+			<mark text="  0"/>
+			<mark text=" 25"/>
+			<mark text=" 50"/>
+			<mark text=" 75"/>
+			<mark text="100"/>
+		</y>
+	</axis>
+</config>

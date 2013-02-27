@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+
+	<camera focus="50" default="0">
+		<view>
+			<point x="129904" y="150000" z="-225000"/>
+			<rotation x="30" y="-30" z="0"/>
+		</view>
+		<view comment="二维：x-y">
+			<point x="78496" y="133859" z="-256749"/>
+			<rotation x="27" y="-17" z="0"/>
+		</view>
+
+		<view>
+			<point x="" y="" z=""/>
+			<rotation x="" y="" z=""/>
+		</view>
+	</camera>
+	<axis xmax="40000" ymax="24000" zmax="40000" backgroundcolor="0x868686" >
+		<z count="4" rotation="90" title="φ(°)" dx="3000" dtitle="8000">
+			<mark text="360"/>
+			<mark text=""/>
+			<mark text="180"/>
+			<mark text=""/>
+			<mark text="0"/>
+		</z>
+		<x count="4" rotation="90" title="q(pC)" dz="5000" dtitle="8000">
+			<mark text="0"/>
+			<mark text="100"/>
+			<mark text="200"/>
+			<mark text="300"/>
+			<mark text=""/>
+		</x>
+		<y count="2" rotation="90" title="n(1/s)" dx="5000" dtitle="8000">
+			<mark text=""/>
+			<mark text="4"/>
+			<mark text="8"/>
+		</y>
+	</axis>
+	<position>
+		<point x="0" y="0" z="0" rotationY="90"/>
+		<point x="0" y="30000" z="-30000" rotationY="90"/>
+	</position>
+</config>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				xmlns:fc="http://www.adobe.com/2006/fc">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+
+			[Bindable]
+			private var flatData:ArrayCollection=new ArrayCollection([
+				{Country: "India", State: "Karnataka", Region: "South-West", Company: "Horizon", Product: "Flexo", Year: "2000", Quarter: "Q1", Month: "Jan", Sales: -10, Cost: 5, Production: 20}, 
+				{Country: "India", State: "Tamil Nadu", Region: "South-East", Company: "Horizon", Product: "Flexo", Year: "2000", Quarter: "Q1", Month: "Mar", Sales: 10, Cost: 5, Production: 20}, 
+				{Country: "India", State: "Kerala", Region: "South-West", Company: "Horizon", Product: "Flexo", Year: "2000", Quarter: "Q4", Month: "Nov", Sales: 10, Cost: 5, Production: 20}, 
+				{Country: "India", State: "Assam", Region: "North-East", Company: "Horizon", Product: "Trinetra", Year: "2000", Quarter: "Q1", Month: "Feb", Sales: 40, Cost: 20, Production: 20}, 
+				{Country: "India", State: "Kerala", Region: "South-West", Company: "Horizon", Product: "Trinetra", Year: "2000", Quarter: "Q4", Month: "Dec", Sales: 55, Cost: 27.5, Production: 20}, 
+				{Country: "India", State: "Karnataka", Region: "South-West", Company: "Horizon", Product: "Trinetra", Year: "2000", Quarter: "Q2", Month: "Apr", Sales: 20, Cost: 10, Production: 20},
+				// confusion
+				{Country: "China", State: "Delhi", Region: "North-East", Company: "Confusion", Product: "Besto", Year: "2000", Quarter: "Q1", Month: "Jan", Sales: 20, Cost: 10, Production: 20}, 
+				{Country: "China", State: "Orissa", Region: "South-East", Company: "Confusion", Product: "Besto", Year: "2000", Quarter: "Q1", Month: "Feb", Sales: 10, Cost: 5, Production: 20}, 
+				{Country: "China", State: "Gujrat", Region: "North-West", Company: "Confusion", Product: "Besto", Year: "2001", Quarter: "Q4", Month: "Oct", Sales: 50, Cost: 25, Production: 20}, 
+				{Country: "China", State: "Delhi", Region: "North-East", Company: "Confusion", Product: "Besto", Year: "2001", Quarter: "Q4", Month: "Nov", Sales: 60, Cost: 30, Production: 20}, 
+				{Country: "China", State: "Tamil Nadu", Region: "South-East", Company: "Confusion", Product: "Besto", Year: "2001", Quarter: "Q4", Month: "Dec", Sales: 70, Cost: 35, Production: 20}, 
+				{Country: "China", State: "Gujrat", Region: "North-West", Company: "Confusion", Product: "Best", Year: "2000", Quarter: "Q1", Month: "Mar", Sales: 30, Cost: 15, Production: 20}]);
+			
+			private var dimList:ArrayCollection=new ArrayCollection([
+				{Country: "India", State: "Karnataka", Region: "South-West", Company: "Horizon", Product: "Flexo", Year: "2000", Quarter: "Q1", Month: "Jan"}]);
+		]]>
+	</mx:Script>
+	
+	<mx:Style source="css\darkroom.css"/>
+	<fc:PivotComponent dataProvider="{flatData}"
+					   width="100%"
+					   height="100%">
+		<mx:HBox width="100%"
+				 height="100%">
+			<mx:VBox width="100"
+					 height="100%">
+				<fc:DimensionList dataProvider="{flatData}"
+								  height="100%"
+								  width="100%"
+								  color="0xFFFFFF"
+								  alternatingItemColors="[0x000000,0x000000]"/>
+				<fc:MeasuresList dataProvider="{['Sales', 'Production', 'Cost']}"
+								 height="100%"
+								 width="100%"
+								 id="m1"
+								 color="0xFFFFFF"
+								 alternatingItemColors="[0x000000,0x000000]"/>
+			</mx:VBox>
+			<mx:VBox width="90%"
+					 height="100%">
+				<mx:TabNavigator width="100%"
+								 height="100%"
+								 creationPolicy="all">
+
+					<mx:VBox width="100%"
+							 height="100%"
+							 label="Chart View">
+
+
+						<fc:OLAPChartExtension height="100%"
+											   width="100%"
+											   measuresList="{m1}">
+							<fc:olapChart>
+								<fc:OLAPChart type="Column"
+											  showDataTips="true"/>
+							</fc:olapChart>
+						</fc:OLAPChartExtension>
+					</mx:VBox>
+					<mx:VBox width="100%"
+							 height="100%"
+							 label="Grid View">
+
+						<fc:OLAPDataGridExtension width="100%"
+												  height="100%"/>
+					</mx:VBox>
+				</mx:TabNavigator>
+			</mx:VBox>
+		</mx:HBox>
+
+	</fc:PivotComponent>
+
+</mx:Application>
+

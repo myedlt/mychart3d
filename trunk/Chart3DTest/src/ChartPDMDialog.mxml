@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" minWidth="955" minHeight="600" 
+				applicationComplete="initApp(event)">
+	<mx:Script>
+		<![CDATA[
+			import dialog.DialogPDM;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+
+			protected function initApp(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+
+			}
+
+
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				var dialog:DialogPDM = new DialogPDM();
+				
+				
+				PopUpManager.addPopUp(dialog,this,true);									
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Button x="579" y="46" label="按钮" click="button1_clickHandler(event)"/>
+	
+</mx:Application>
