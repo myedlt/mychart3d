@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:local="*" creationComplete="init()" 
+	xmlns:pivotComponentClasses="com.adobe.flex.extras.controls.pivotComponentClasses.*">
+<mx:Script>
+	<![CDATA[
+	///////////////////////////////////////////////////////////////////////////////////////
+//  
+//  ADOBE SYSTEMS INCORPORATED
+//  Copyright 2008 Adobe Systems Incorporated
+//  All Rights Reserved.
+//   
+//  NOTICE:  Adobe permits you to use, modify, and distribute this file in 
+//  accordance with the terms of the Adobe license agreement accompanying it.  
+//  If you have received this file from a source other than Adobe, then your use,
+//  modification, or distribution of it requires the prior written permission of Adobe.
+////////////////////////////////////////////////////////////////////////////////////////
+		import com.adobe.flex.extras.controls.pivotComponentClasses.helperClasses.PivotListData;
+		import mx.olap.OLAPAxisPosition;
+		import mx.controls.Alert;
+		import com.adobe.flex.extras.controls.pivotComponentClasses.helperClasses.ChartPopUpButton;
+		import com.adobe.flex.extras.controls.myEvent.EnableChangeEvent;
+		import flash.display.DisplayObject;
+		import mx.core.UIComponent;
+		import mx.events.DragEvent;
+		import mx.collections.ArrayCollection;
+		import mx.controls.List;
+		import mx.controls.PopUpButton;
+		import mx.managers.DragManager;
+		import mx.olap.OLAPCube;
+		import com.adobe.flex.extras.controls.PivotComponent;
+		
+		
+		/**
+		 *  @private
+		 *  To add event listeners to this pivot chart
+		 */
+		private  function init():void
+		{	
+			this.addEventListener("queryChanged",propogate);
+			this.addEventListener("cubeChanged",propogate);
+			this.addEventListener("resetPivotTable",propogateDel);
+			showAllNodes = true;
+		}
+		
+		
+		
+		//--------------------------------------------------------------------------------
+		//
+		//								Variables
+		//
+		//--------------------------------------------------------------------------------
+		
+		public var cube:OLAPCube = new OLAPCube();
+		[Bindable]
+	    private var pivotComponent:PivotComponent;
+	    
+	    	
+	    //---------------------------------------------------------------------------------
+	    //
+	    //								Properties
+	    //
+	    //---------------------------------------------------------------------------------
+	    
+	    //-----------------------------------------
+	    //		showAllNodes
+	    //-----------------------------------------
+	    [Bindable]
+	    private var _showAll:Boolean = false;
+	    
+	    /**
+	     *  Determnes whether to show (All) nodes of the result or not
+	     */ 
+	    public function set showAllNodes(value:Boolean):void
+	    {
+	    	_showAll = value;
+	    }
+	    
+	    /**
+	     *  @private
+	     */
+	    public function get showAllNodes():Boolean
+	    {
+	    	return _showAll;
+	    }	    
+	    
+	    //---------------------------------------------------------------------------------
+	    //
+	    //							Methods
+	    //
+	    //---------------------------------------------------------------------------------
+	    
+	    private function propogate(event:Event):void
+		{	
+			getPivotComponent();
+			cube = pivotComponent.cube;
+			var exist:Boolean = false;
+			var lbl:String;
+			var slicerPopUp:ChartPopUpButton;
+			var members:ArrayCollection;
+			if (pivotComponent.slicerFields && pivotComponent.slicerFields.length!=0)
+			{
+				if (slicerBox.numChildren==0)
+				{
+					lbl = pivotComponent.slicerFields[0];
+					slicerPopUp=addPopUp(lbl);
+					slicerPopUp.label =lbl  ;
+    				//var members:ArrayCollection;
+                	members = cube.findDimension(lbl).findAttribute(
+    											lbl).members as ArrayCollection;
+    				slicerPopUp.addMembers(members);
+    				slicerPopUp.addEventListener("selected", propogateSelect);
+					slicerBox.addChild(slicerPopUp);
+				}	
+				else
+				{	
+					for (var i:int=0;i<pivotComponent.slicerFields.length;i++)
+					{	
+						exist = false;
+						for (var j:int=0; j<slicerBox.numChildren;j++)
+						{
+							var name:String=ChartPopUpButton(slicerBox.getChildAt(j)).label;
+							if (name==pivotComponent.slicerFields[i])
+							{
+								exist=true;
+								break;
+							}	
+						}	
+							
+						if (!exist)
+						{	
+							exist = false;
+							lbl= pivotComponent.slicerFields[i]
+							slicerPopUp=addPopUp(lbl);
+							slicerPopUp.label =lbl  ;
+
+                		  	members = cube.findDimension(lbl).findAttribute(
+    														lbl).members as ArrayCollection;
+    						slicerPopUp.addMembers(members);
+    						slicerPopUp.addEventListener("selected", propogateSelect);
+							slicerBox.addChild(slicerPopUp);	
+						}
+					}
+				}							
+			}	 
+	
+			dispatchChangeForChildren(event.type);	
+	}
+ 			
+	private function dispatchChangeForChildren(eventName:String):void
+	{
+	 	var length:int = this.numChildren;
+	   	for (var i:int = 0; i < length; i++)
+	   	{
+	   		dispatchChangeForInnerChildren(this.getChildAt(i), eventName);
+       	}
+    }
+    	
+    /**
+     *  @private 
+     *  This method dispatches change event to children of pivot component's children recursively
+     */
+    private function dispatchChangeForInnerChildren(obj:DisplayObject, eventName:String):void
+    {
+    	if (obj is UIComponent)
+    	{
+    		var length:int = UIComponent(obj).numChildren;
+	   		for (var i:int = 0; i < length; i++)
+    		{
+    			if (UIComponent(obj).getChildAt(i) is OLAPDataGridEx)
+    			{
+    				OLAPDataGridEx(UIComponent(obj).getChildAt(i)).dispatchEvent(new Event(eventName));
+    			}
+    			else
+    			{
+    				dispatchChangeForInnerChildren(UIComponent(obj).getChildAt(i), eventName);
+    			}
+    		}
+    		if (UIComponent(obj) is OLAPDataGridEx)
+    		{
+    			OLAPDataGridEx(UIComponent(obj)).dispatchEvent(new Event(eventName));
+    		}
+    	}
+    }
+	    
+	 private function propogateSelect(event:EnableChangeEvent):void
+ 	 {
+	    	var eventObj:EnableChangeEvent=new EnableChangeEvent("selected");
+	    	eventObj.param=event.param;
+	    	eventObj.param1=event.param1;
+	    	var obj:DisplayObject;
+	    	for(var i:int=0;i<numChildren;i++)
+	    		{
+	    			obj=this.getChildAt(i);
+	    			if(obj is OLAPDataGridEx ) 
+	    				{OLAPDataGridEx(UIComponent(obj)).dispatchEvent(eventObj);
+	    				}
+	    		}
+	    			
+	}	
+		
+		private function propogateDel(event:Event):void
+		{
+			getPivotComponent();
+				var obj:DisplayObject;
+	    	for(var i:int=0;i<numChildren;i++)
+	    		{
+	    			obj=this.getChildAt(i);
+	    			if(obj is OLAPDataGridEx ) 
+	    				{OLAPDataGridEx(UIComponent(obj)).dispatchEvent(new Event("resetGrid"));
+	    				}
+	    		}
+	    			
+		}
+	    /**
+	     *  @private
+	     *  Searches for enclosing PivotComponent and assigns it to
+	     *  <code>pivotComponent</code>
+	     */
+	    private function getPivotComponent():void
+	    {
+	    	if(!pivotComponent)
+	    	{
+				var p:Object = this.parent;
+	    		while(p)
+	    		{
+	    			if(p is PivotComponent)
+	    			{
+	    				pivotComponent = p as PivotComponent;
+	    				return;
+	    			}
+	    			else
+	    				p = p.parent;
+	    		}
+	    	}	    	
+	    }
+
+	    
+	    /**
+	     *  @private
+	     *  This creates a ChartPopUpButton
+	     * 
+	     *  @param lbl String that is to be used as label to the created pop up button
+	     * 
+	     *  @return ChartPopUpButton
+	     */
+	      
+	    private function addPopUp(lbl:String):ChartPopUpButton
+	    {
+	    	var newPopUp:ChartPopUpButton = new ChartPopUpButton();
+    		
+    		return newPopUp;    		
+	    } 
+     
+    	
+    		
+    	//------------------------------------------------------------------------------------
+    	//
+    	//							Event Handlers
+    	//
+    	//------------------------------------------------------------------------------------
+    	
+    	/**
+    	 *  @private
+    	 */
+    	private function dragEnterSlicer(event:DragEvent):void
+    	{
+    		getPivotComponent();
+    		if(pivotComponent.rowFields.length !=0 || pivotComponent.columnFields.length != 0)
+    		DragManager.acceptDragDrop(slicerBox);
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds the dimension to slicerAxis
+    	 *  and to enclosing pivotComponent's slicerFields
+    	 *  and populates the popUp
+    	 */
+    	private var str:String;
+    	private function addSlicer(event:DragEvent):void
+    	{
+    		getPivotComponent();
+    		cube = pivotComponent.cube;
+    		if(event.dragInitiator is List )
+    		{
+    			str = List(event.dragInitiator).selectedItem.toString();
+    			var	index:int = (pivotComponent.rowFields.indexOf(str) + pivotComponent.columnFields.indexOf(str) + 
+           					pivotComponent.slicerFields.indexOf(str) + pivotComponent.displayedFacts.indexOf(str));
+           		if(index != -4) 
+           		{
+           			Alert.show("Dimension already exists");
+           			return;
+           		}
+           
+    			
+    			var slicers:Array = pivotComponent.slicerFields;
+    			slicers.push(str);
+    			pivotComponent.slicerFields = slicers;
+    		}
+    		else 
+    		{
+    			return ;	
+    		}
+    	}
+    	private function clearSlicer(event:Event):void
+    	{
+    		slicerBox.removeAllChildren();
+    	}
+    	
+    	/**
+    	 *  @private
+    	 */
+    	private function dragOverHandler(event:DragEvent):void 
+		{
+			
+			if(event.ctrlKey) 
+			{ 
+				event.action = DragManager.COPY;
+				
+			}
+			else if (event.shiftKey) 
+			{ 
+				event.action = DragManager.LINK;
+			}
+			else 
+			{ 
+				event.action = DragManager.MOVE;
+			}
+			
+			var items:Array = event.dragSource.dataForFormat("items") as Array;
+			if(items[0] is OLAPAxisPosition) 
+			{
+				//hideDropFeedback(event);
+           		DragManager.showFeedback(DragManager.NONE);
+           		return;
+			}
+			
+			DragManager.showFeedback(event.ctrlKey ? DragManager.COPY : DragManager.MOVE);
+		}
+		
+	 	private function slicerAdd(event:Event):void
+		{
+			 var slicerPopUp:ChartPopUpButton = addPopUp(str);
+    		slicerBox.addChild(slicerPopUp);
+  			//dispatchEvent(new Event("queryChanged"));
+  			
+  		}	
+  		 
+  		private function slicerBoxUpdate(event:Event):void
+  		{
+  				cursorManager.removeBusyCursor();
+  				for(var i:int = 0; i<slicerBox.numChildren ; i++)
+	    		{
+	    			var sItem:String = ChartPopUpButton(slicerBox.getChildAt(i)).label ;
+	    			var found:Boolean = false ;
+	    			
+	    			for(var j:int = 0 ;j<pivotComponent.slicerFields.length; j++)
+	    			{
+	    				if(sItem == pivotComponent.slicerFields[j] )
+	    				{
+	    					found = true ;
+	    					break;
+	    				}
+	    			}
+	    			
+	    			if(!found) 
+	    			{
+	    				slicerBox.removeChildAt(i);
+	    			}
+	    		}
+	    		    	
+  		}
+  		
+  		private function deleteAttribute(event:KeyboardEvent):void
+    	{
+    		var deletedItem:ChartPopUpButton;
+    		var index:int
+    		var pos:String;
+    		//cursorManager.setBusyCursor();
+    		if(event.charCode == 127 )
+    		{
+    			 if(event.currentTarget == slicerBox)
+    			 {
+    				pos = "sli" ;
+    				deletedItem = slicerBox.removeChild(DisplayObject(slicerBox.focusManager.getFocus())) as ChartPopUpButton;
+    			//	if(deletedItem.isPopUp == true) deletedItem.close(); 
+    				index = pivotComponent.slicerFields.indexOf(deletedItem.label);
+    				var slicers:Array = pivotComponent.slicerFields;
+    				slicers.splice(index,1);
+    				pivotComponent.slicerFields = slicers;
+    				    				
+    			 }
+    			 
+    			// pivotComponent.dispatchEvent(new Event("deleteChartSlicer"));
+    			
+    		}
+    		
+    		
+    	}
+  		
+			
+	]]>
+</mx:Script>	
+	
+	<mx:Label text="Slicer Fields"/>
+	<mx:HBox id="slicerBox" height="10%" width="100%" dragEnter="dragEnterSlicer(event)" 
+			dragDrop="addSlicer(event)" dragOver="dragOverHandler(event)"
+			 toolTip="Drop Slicer Fields Here" keyUp="deleteAttribute(event)" 
+			borderColor="0xFFFFFF" borderStyle="solid"/>
+	<pivotComponentClasses:OLAPDataGridEx height="90%" width="100%" removeSlicer="clearSlicer(event)" updateSlicerBox="slicerBoxUpdate(event)"/>
+</mx:VBox>

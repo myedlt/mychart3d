@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" 
+				minWidth="800" minHeight="600" creationComplete="initComponent()" close="closeWindow()"
+				xmlns:chart3d="info.osmatrix.rmengine.components.*" width="873" height="679" title="变电告警局部谱图" showCloseButton="true" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.SystemManager;
+			
+			private function initComponent():void
+			{
+				//stage.align = StageAlign.TOP_LEFT; 			// 当影片输出的时候，整个影片相对浏览器的左上方对齐
+				//stage.scaleMode = StageScaleMode.NO_SCALE; 	// 影片不会跟随浏览的尺寸大小而发生缩放。
+
+				chart_11.loadData();
+				chart_12.loadData();
+				
+				chartAvgVerticalAxis.title = "huhj";
+			}
+			
+			public function closeWindow():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function customizeLabel(cat:Object,pcat:Object,ax:LinearAxis):String
+			{
+				var lbl:String;
+				var num:Number = cat as Number;
+				switch(num)
+				{
+					case 0:
+						lbl = "  0";break;
+					case 25:
+						lbl = " 90";break;
+					case 50:
+						lbl = "180";break;
+					case 75:
+						lbl = "270";break;
+					case 100:
+						lbl = "360";break;
+					default:
+						lbl = "360";break;
+				}
+				
+				return lbl;
+			}
+
+		]]>
+	</mx:Script>
+	<mx:XML id="data2DJQ" source="assets/chart03/dataC.xml" />
+	<mx:XML id="data2DJN" source="assets/chart04/dataD.xml" />
+	<mx:Array id="chartAvgGridLines">
+		<mx:GridLines direction="both" />
+	</mx:Array>
+	<mx:Array id="chartCountGridLines">
+		<mx:GridLines direction="both" />
+	</mx:Array>
+	<chart3d:Chart3DCanvas id="chart_11" x="428.6" y="18.5" 
+						   configXMLUrl="assets/chart01/config.xml" 
+						   dataXMLUrl="assets/chart01/data.xml" isDebug="false" borderStyle="solid" iViewIndex="0"/>
+	
+	<chart3d:Chart3DCanvas id="chart_12" x="428.6" y="326.05" 
+						   configXMLUrl="assets/chart02/config.xml" 
+						   dataXMLUrl="assets/chart02/data.xml" isDebug="false" borderStyle="solid" iViewIndex="0"/>
+	
+	<mx:Canvas x="21" y="18" width="400" height="300" borderStyle="solid">
+		<mx:ColumnChart id="chartAvg" width="100%" height="100%" dataProvider="{data2DJQ.r}" showDataTips="true" backgroundElements="{chartAvgGridLines}">
+			<mx:verticalAxis>
+				<mx:LinearAxis id="chartAvgVerticalAxis" title="放电幅值(mV)" />
+			</mx:verticalAxis>				
+			<mx:horizontalAxis>
+				<mx:LinearAxis title="相位" minimum="0" maximum="100" interval="25" labelFunction="customizeLabel" />
+			</mx:horizontalAxis>
+			<mx:series>
+				<mx:ColumnSeries xField="@x" yField="@z" />
+			</mx:series>
+		</mx:ColumnChart>		
+	</mx:Canvas>
+	
+	<mx:Canvas x="21" y="325" width="400" height="300" borderStyle="solid">
+		<mx:ColumnChart id="chartCount" width="100%" height="100%" dataProvider="{data2DJN.r}"  showDataTips="true" backgroundElements="{chartCountGridLines}">
+			<mx:horizontalAxis>
+				<mx:LinearAxis title="相位" minimum="0" maximum="100" interval="25" labelFunction="customizeLabel"/>
+			</mx:horizontalAxis>
+			
+			<mx:verticalAxis>
+				<mx:LinearAxis title="阀值计数" id="axisV"/>
+			</mx:verticalAxis>
+			
+			<mx:series>
+				<mx:ColumnSeries displayName="阀值计数" xField="@x" yField="@z" />
+			</mx:series>
+		</mx:ColumnChart>
+		
+	</mx:Canvas>
+</mx:TitleWindow>

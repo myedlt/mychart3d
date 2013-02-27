@@ -1,0 +1,1200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:local="*" creationComplete="init()">
+<mx:Script>
+	<![CDATA[
+///////////////////////////////////////////////////////////////////////////////////////
+//  
+//  ADOBE SYSTEMS INCORPORATED
+//  Copyright 2008 Adobe Systems Incorporated
+//  All Rights Reserved.
+//   
+//  NOTICE:  Adobe permits you to use, modify, and distribute this file in 
+//  accordance with the terms of the Adobe license agreement accompanying it.  
+//  If you have received this file from a source other than Adobe, then your use,
+//  modification, or distribution of it requires the prior written permission of Adobe.
+////////////////////////////////////////////////////////////////////////////////////////
+		import mx.events.CloseEvent;
+		import mx.olap.OLAPMember;
+		import mx.core.UIComponent;
+		import mx.events.ChildExistenceChangedEvent;
+		import mx.events.DragEvent;
+		import mx.charts.AxisRenderer;
+		import mx.charts.LinearAxis;
+		import mx.containers.Canvas;
+		import mx.controls.PopUpButton;
+		import mx.controls.ComboBase;
+		import mx.controls.ComboBox;
+		import mx.managers.DragManager;
+		import mx.olap.IOLAPSet;
+		import mx.olap.IOLAPResult;
+		import mx.rpc.AsyncResponder;
+		import mx.rpc.AsyncToken;
+		import mx.olap.OLAPAttribute;
+		import mx.olap.OLAPQueryAxis;
+		import mx.olap.OLAPSet;
+		import mx.olap.OLAPQuery;
+		import mx.olap.OLAPCube;
+	
+		import mx.rpc.events.ResultEvent;
+		import mx.rpc.http.HTTPService;
+		import mx.collections.ArrayCollection;
+		import mx.collections.ICollectionView;
+		import mx.collections.IList;
+		import mx.controls.Alert;
+		import mx.olap.OLAPDimension;
+		import mx.olap.OLAPMeasure;
+		
+		import com.adobe.flex.extras.controls.PivotComponent;
+		import com.adobe.flex.extras.controls.pivotComponentClasses.olapChartClasses.OLAPChart;
+		import com.adobe.flex.extras.controls.pivotComponentClasses.helperClasses.ChartPopUpButton;
+		import com.adobe.flex.extras.controls.myEvent.EnableChangeEvent;
+		
+		/**
+		 *  @private
+		 *  To add event listeners to this pivot chart
+		 */
+		private function init():void
+	    {
+	    	addEventListener("selected", filter);
+	    	addEventListener("queryChanged", runNewQuery);
+	    	addEventListener("cubeChanged",cubeCompleteHandler);
+	    	addEventListener("dimensionDelete",removeDimension);
+	    	addEventListener("resetOLAPChart",resetChart);
+	    }
+		
+		//--------------------------------------------------------------------------------
+		//
+		//								Variables
+		//
+		//--------------------------------------------------------------------------------
+		
+		public var cube:OLAPCube = new OLAPCube();
+	    private var query:OLAPQuery;
+	    private var filteredMembersList:Array = [];
+	    private var filterMembers:Array;
+	    private var popUpChanged:Boolean = false;
+	    private var modifiedPopUp:ChartPopUpButton;
+	    
+	    [Bindable]
+	    private var pivotComponent:PivotComponent;
+	    	
+	    //---------------------------------------------------------------------------------
+	    //
+	    //								Properties
+	    //
+	    //---------------------------------------------------------------------------------
+	        
+	    //----------------------------------------
+	    //		olapChart
+	    //----------------------------------------
+	    [Bindable]
+	    private var _olapChart:OLAPChart;
+	    public var measuresList:MeasuresList
+	    /**
+	     *	OLAPChart shown by this pivot chart
+	     */ 
+	    public function set olapChart(value:OLAPChart):void
+	    {
+	    	_olapChart = value;
+	    }
+	    
+	    /**
+	     * @private
+	     */ 
+	    public function get olapChart():OLAPChart
+	    {
+	    	return _olapChart;
+	    }
+	    
+	    //-----------------------------------------
+	    //		showAllNodes
+	    //-----------------------------------------
+	    [Bindable]
+	    private var _showAll:Boolean = true;
+	    
+	    /**
+	     *  Determnes whether to show (All) nodes of the result or not
+	     */ 
+	    public function set showAllNodes(value:Boolean):void
+	    {
+	    	_showAll = value;
+	    }
+	    
+	    /**
+	     *  @private
+	     */
+	    public function get showAllNodes():Boolean
+	    {
+	    	return _showAll;
+	    }	    
+	    
+	    //---------------------------------------------------------------------------------
+	    //
+	    //							Methods
+	    //
+	    //---------------------------------------------------------------------------------
+	    
+	    /**
+	     *  @private
+	     *  Prepares new query using current configuration
+	     *  and to show the result in underlying the chart
+	     */ 
+	    private function runQuery():void
+	    {	
+			prepareQuery();
+			executeQuery();
+	    }
+	    
+	    /**
+	     *  @private
+	     *  Searches for enclosing PivotComponent and assigns it to
+	     *  <code>pivotComponent</code>
+	     */
+	    private function getPivotComponent():void
+	    {
+	    	if(!pivotComponent)
+	    	{
+				var p:Object = this.parent;
+	    		while(p)
+	    		{
+	    			if(p is PivotComponent)
+	    			{
+	    				pivotComponent = p as PivotComponent;
+	    				return;
+	    			}
+	    			else
+	    				p = p.parent;
+	    		}
+	    	}	    	
+	    }
+	    
+	    /**
+	     *  @private
+	     *  Adds all members of a particular dimension
+	     *  to filterMembers array.
+	     * 
+	     *  @param row Array of rowAxis attriutes
+	     *  @param column Array of columnAxis attributes
+	     */  
+	    private function fillFilteredMembers(row:Array,column:Array, slicer:Array):void
+		{
+			var i:int=0;
+			filteredMembersList = pivotComponent.filterMembers;
+			for(i=0;i<row.length;i++)
+			{
+				if(!filteredMembersList.hasOwnProperty(row[i]))
+				{	
+					if(showAllNodes)	
+						filteredMembersList[row[i]]=cube.findDimension(row[i]).findAttribute(row[i]).members;
+					else
+						filteredMembersList[row[i]]=cube.findDimension(row[i]).findAttribute(row[i]).children;
+				}
+			}				
+			for(i=0;i<column.length;i++)
+			{
+				if(!filteredMembersList.hasOwnProperty(column[i]))
+				{
+					if(showAllNodes)
+					 	filteredMembersList[column[i]]=cube.findDimension(column[i]).findAttribute(column[i]).members;
+					 else
+					 	filteredMembersList[column[i]]=cube.findDimension(column[i]).findAttribute(column[i]).children;			
+				}
+			}
+			for(i=0;i<slicer.length;i++)
+			{
+				if(!filteredMembersList.hasOwnProperty(slicer[i]))
+				{
+					if(showAllNodes)
+					 	filteredMembersList[slicer[i]]=cube.findDimension(slicer[i]).findAttribute(slicer[i]).members;
+					 else
+					 	filteredMembersList[slicer[i]]=cube.findDimension(slicer[i]).findAttribute(slicer[i]).children;			
+				}
+			}
+			pivotComponent.filterMembers = 	filteredMembersList;
+		}
+		
+		/**
+		 *  @private
+		 *  Prepares a  new query using current configuration
+		 *  of rows, columns etc...
+		 */
+	    public function prepareQuery():void
+	    {
+	    	fillFilteredMembers(pivotComponent.rowFields, pivotComponent.columnFields, pivotComponent.slicerFields);
+	    	query = new OLAPQuery();
+			
+			var rowAxis:OLAPQueryAxis = query.getAxis(1) as OLAPQueryAxis;
+			var colAxis:OLAPQueryAxis = query.getAxis(0) as OLAPQueryAxis;
+			var slicerAxis:OLAPQueryAxis = query.getAxis(2) as OLAPQueryAxis;
+			var rowSet:OLAPSet;
+			var colSet:OLAPSet;
+			var slicerSet:OLAPSet;
+			var rowBoxLength:int = rowsBox.numChildren;
+			
+			rowSet=getNewSet(pivotComponent.rowFields);
+			colSet=getNewSet(pivotComponent.columnFields);
+			if(rowSet.tuples.length)
+			{
+				if(colSet.tuples.length)
+					rowSet = rowSet.crossJoin(colSet) as OLAPSet;
+			}
+			else
+				rowSet = colSet;
+			
+			colSet = new OLAPSet();
+			
+			if(pivotComponent.displayedFacts.length)
+			{
+				colSet.addElement(cube.findDimension("Measures").findMember(pivotComponent.displayedFacts[0]));
+				for(var i:int = 1; i < pivotComponent.displayedFacts.length; i++)
+				{
+					colSet.addElement(cube.findDimension("Measures").findMember(pivotComponent.displayedFacts[i]));
+					
+				}					
+			}
+			else
+				colSet.addElements(cube.findDimension("Measures").findHierarchy("Measures").members);
+				
+			colSet.hierarchize(true);
+			if(pivotComponent.slicerFields.length!=0)
+			{
+			slicerSet = new OLAPSet();
+			slicerSet = getNewSet(pivotComponent.slicerFields,true);
+			slicerAxis.addSet(slicerSet);
+			}
+			
+			rowAxis.addSet(rowSet);
+			colAxis.addSet(colSet);
+			
+	    }
+	    
+	    /**
+	     *  @private
+	     *  Executes the new query
+	     */ 
+	    private function executeQuery():void
+	    {
+	    	getPivotComponent();
+	    	cursorManager.setBusyCursor();
+	    	cube = pivotComponent.cube;
+	    			if(!query.getAxis(1).tuples.length)
+	    	{
+	    		Alert.show("Result is empty\n");
+	    		revertPopUpMembers();
+	    		return;
+	    	} 
+		    try
+    		{
+        		var token:AsyncToken = cube.execute(query);
+        		token.addResponder(new AsyncResponder(displayResult, displayResult));
+        		revertPopUpMembers();
+    		}
+    		catch(e:Error)
+    		{
+        		Alert.show(e.message);
+    		}
+	    }
+	    
+	    /**
+	     *  @private
+	     *  Removes filter function on popped up list
+	     */ 
+	    private function revertPopUpMembers():void
+	    {
+	    	if(popUpChanged)
+	    	{
+	    		if(showAllNodes)
+    				modifiedPopUp.members = cube.findDimension(modifiedPopUp.label).findAttribute(
+    							modifiedPopUp.label).members as ArrayCollection;
+    			else
+    				modifiedPopUp.members = cube.findDimension(modifiedPopUp.label).findAttribute(
+    							modifiedPopUp.label).children as ArrayCollection;
+    			modifiedPopUp.members.filterFunction = null;
+    			modifiedPopUp.members.refresh();
+    			popUpChanged = false;	
+	    	}
+	    }
+		
+		/**
+		 *  @private
+		 *  Displays new result in the chart
+		 */
+	    private function displayResult(result:Object, token:Object=null):void
+	    {
+	    	cursorManager.removeBusyCursor();
+	    	if(result)
+	    	{
+	    		if(olapChart is OLAPChart)
+	    			{
+	    				olapChart.dataProvider = result as IOLAPResult;
+	    				legendCharts.dataProvider = olapChart;	
+	    			}
+	    		
+	    		for(var i:int = 0; i<slicerBox.numChildren ; i++)
+	    		{
+	    			var sItem:String = ChartPopUpButton(slicerBox.getChildAt(i)).label ;
+	    			var found:Boolean = false ;
+	    			
+	    			for(var j:int = 0 ;j<pivotComponent.slicerFields.length; j++)
+	    			{
+	    				if(sItem == pivotComponent.slicerFields[j] )
+	    				{
+	    					found = true ;
+	    					break;
+	    				}
+	    			}
+	    			
+	    			if(!found) 
+	    			{
+	    				slicerBox.removeChildAt(i);
+	    			}
+	    		}
+	    	
+	    	//invalidateProperties();	    	
+	    	}
+	    	
+	    }
+		
+	    /**
+	     *  @private
+	     *  This method filters the unselected members from the dimension
+	     *  and shows new result in the chart
+	     */	    
+	    private function filter(event:EnableChangeEvent):void
+		{
+			filteredMembersList = pivotComponent.filterMembers;
+			var filterMembers:Array = event.param1;
+			var dimension:String = event.param;
+			
+			var queryAxis:OLAPQueryAxis;;
+			var colSet:OLAPSet;
+			var rSet:OLAPSet;
+					
+			this.filterMembers=filterMembers;
+			var collection:ArrayCollection=filteredMembersList[dimension];
+			collection.filterFunction=filterNames;
+			collection.refresh();
+			pivotComponent.filterMembers = filteredMembersList;
+			modifiedPopUp = event.target as ChartPopUpButton;
+			popUpChanged = true;
+			pivotComponent.dispatchEvent(new Event("filterChanged"));
+			return;	
+		}
+		
+		
+		private var currentValidMembersList:Array=new Array;
+		private function fillValidMembers(row:Array,column:Array,slicer:Array):void
+		{
+		var i:int=0;
+		currentValidMembersList=new Array;
+		for(i=0;i<row.length;i++)
+		{
+			//if(currentValidMembersList.hasOwnProperty(row[i]))
+				currentValidMembersList[row[i]]=filterTheMembers(pivotComponent.cube.findDimension(row[i]).findAttribute(row[i]).members , row[i]);
+		}
+		for(i=0;i<column.length;i++)
+		{
+			//if(!currentValidMembersList.hasOwnProperty(column[i]))
+				currentValidMembersList[column[i]]=filterTheMembers(pivotComponent.cube.findDimension(column[i]).findAttribute(column[i]).members,column[i]);
+		}
+		for(i=0;i<slicer.length;i++)
+		{
+			//if(!currentValidMembersList.hasOwnProperty(slicer[i]))
+				currentValidMembersList[slicer[i]]=filterTheMembers(pivotComponent.cube.findDimension(slicer[i]).findAttribute(slicer[i]).members,slicer[i]);
+		}
+		
+				
+	}	
+	
+	private function filterTheMembers(members:IList,name:String):IList
+	{
+		var i:int=0;
+		var newMembers:IList=new ArrayCollection;
+		for(i=0;i<members.length;i++)
+		{
+			if(memberPresent(members[i],name))
+				newMembers.addItem(members[i]);
+		}
+		
+		return newMembers;
+	}
+	
+	private function memberPresent(member:OLAPMember,name:String):Boolean
+	{
+		var i:int=0;
+		var membersArray:IList=filteredMembersList[name];
+		if(!member) return false;
+		for(i=0;i<membersArray.length;i++)
+		{
+			if(OLAPMember(membersArray[i]).displayName==member.displayName)
+			return true;
+		}
+		
+		return false;
+	}		
+					
+		/**
+		 *  @private
+		 *  This is to filter the members for each dimension
+		 *  
+		 *  @param fields Array of OLAPAttributes
+		 * 
+		 *  @return OLAPSet that is a cross join of the members of all OLAPAttributes in <code>fields</code>
+		 */		
+		private function getNewSet(fields:Array,isSlicer:Boolean=false):OLAPSet
+		{
+			filteredMembersList = pivotComponent.filterMembers;
+			fillValidMembers(pivotComponent.rowFields,pivotComponent.columnFields,pivotComponent.slicerFields);
+			var Set:OLAPSet=new OLAPSet();
+			var tSet:OLAPSet;
+			if(isSlicer)
+        	{
+        	
+        		var memList:ArrayCollection = currentValidMembersList[fields[0]];
+        		memList.filterFunction = filterAll;
+        		memList.refresh();
+        		Set.addElements(memList);
+        	
+	 			for(var i:int=1;i<fields.length;i++)
+ 				{
+ 					tSet = new OLAPSet();
+ 					memList = currentValidMembersList[fields[i]];
+ 					memList.filterFunction=filterAll;
+ 					memList.refresh();
+ 					tSet.addElements( memList );
+					Set=Set.crossJoin(tSet) as OLAPSet;
+				} 
+        	}	
+			
+			else
+			{
+				if(fields.length)
+					Set.addElements(currentValidMembersList[fields[0]]);
+	 			for(var i1:int=1;i1<fields.length;i1++)
+ 				{
+ 					tSet = new OLAPSet();
+ 					tSet.addElements(currentValidMembersList[fields[i1]]);
+					Set=Set.crossJoin(tSet) as OLAPSet;
+				} 
+			
+			}
+			pivotComponent.filterMembers = filteredMembersList;
+			return Set;
+		}	
+		
+		private function filterAll(item:Object):Boolean
+		{
+			if(OLAPMember(item).displayName=="(All)") return false;
+			else return true;
+		}	
+		
+		/**
+		 *  @private
+		 *  Filter function to be used to filter certain members from attributes
+		 */
+		private function filterNames(item:Object):Boolean 
+		{ 
+			var fstr:String = String(item.name);
+			if(filterMembers.indexOf(fstr)!=-1) 
+				return false; 
+			return true;
+		}
+	    
+	    /**
+	     *  @private
+	     *  This creates a ChartPopUpButton
+	     * 
+	     *  @param lbl String that is to be used as label to the created pop up button
+	     * 
+	     *  @return ChartPopUpButton
+	     */
+	    private function addPopUp(lbl:String):ChartPopUpButton
+	    {
+	    	var newPopUp:ChartPopUpButton = new ChartPopUpButton();
+    		newPopUp.label = lbl;
+    		if(showAllNodes)
+    			newPopUp.members = cube.findDimension(lbl).findAttribute(
+    						lbl).members as ArrayCollection;
+    		else
+    			newPopUp.members = cube.findDimension(lbl).findAttribute(
+    						lbl).children as ArrayCollection;
+    		newPopUp.addEventListener("selected", filter);
+    		return newPopUp;    		
+	    } 
+	    
+	    //--------------------------------------------------------------------------------
+	    //
+	    //					Overridden methods
+	    //
+	    //--------------------------------------------------------------------------------		
+	    
+	    /**
+     	 *  @inheritDoc
+     	 */
+    	override protected function measure():void
+    	{
+        	super.measure();
+        	measuredWidth = 800;
+        	measuredHeight = 800;
+    	}
+    
+    	/**
+    	 *  @inheritDoc
+    	 */
+    	override protected function commitProperties():void
+    	{
+    		if(!olapChart)
+    		{
+    			olapChart = new OLAPChart();
+    			olapChart.showDataTips = true;
+    			olapChart.type = "Column";			
+    		}
+    		var vAxisRenderer:AxisRenderer = new AxisRenderer();
+    		vAxisRenderer.axis = olapChart.verticalAxis;
+    		vAxisRenderer.visible = false;
+    		olapChart.verticalAxisRenderers.push(vAxisRenderer);	
+    		var hAxisRenderer:AxisRenderer = new AxisRenderer();
+    		hAxisRenderer.axis = olapChart.horizontalAxis;
+    		hAxisRenderer.visible = false
+    		olapChart.horizontalAxisRenderers.push(hAxisRenderer);
+    		chartPanel.addChild(olapChart);  
+    	}
+    	
+    	/**
+    	 *  @inheritDoc
+    	 */
+    	override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+    	{
+    		olapChart.percentHeight = 100;
+        	olapChart.percentWidth = 100;
+        	super.updateDisplayList(unscaledWidth, unscaledHeight);
+    	}
+    	
+    	
+    	//------------------------------------------------------------------------------------
+    	//
+    	//							Event Handlers
+    	//
+    	//------------------------------------------------------------------------------------
+    	
+    	/**
+    	 *  @private
+    	 */
+    	private function dragEnterRows(event:DragEvent):void
+    	{
+    		if(event.dragInitiator != MeasuresList || event.dragInitiator == seriesList)
+    		DragManager.acceptDragDrop(rowsBox);
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds the dimension to rowAxis
+    	 *  and to enclosing pivotComponent's rowFields
+    	 *  and populates the popUp
+    	 */
+    	private var rString:String;
+    	private var cString:String;
+    	private var sString:String;
+    	
+    	private var rFlag:Boolean=false;
+    	private var cFlag:Boolean=false;
+    	private var sFlag:Boolean=false;
+    	
+    	private function addRows(event:DragEvent):void
+    	{
+    		if(event.dragInitiator is MeasuresList || event.dragInitiator == seriesList)
+    		{
+    			return;
+    		}
+    		getPivotComponent();
+    		rString = List(event.dragInitiator).selectedItem.toString();
+    		var indexC:int  = (pivotComponent.rowFields.indexOf(rString) + pivotComponent.columnFields.indexOf(rString) +
+    								 pivotComponent.slicerFields.indexOf(rString) + pivotComponent.displayedFacts.indexOf(rString));
+    		if(indexC != -4) 
+    		{
+    			Alert.show("Dimension already exists");
+    			return ;
+    		}
+    		var rows:Array = pivotComponent.rowFields;    		
+    		rows.push(rString);
+    		rFlag=true;
+    		pivotComponent.rowFields = rows;
+    	}
+    	
+    	/**
+    	 *  @private
+    	 */
+    	private function dragEnterColumns(event:DragEvent):void
+    	{
+    		if(event.dragInitiator is MeasuresList|| event.dragInitiator == seriesList)
+    		{
+    			return;
+    		}
+    		DragManager.acceptDragDrop(columnsBox);
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds the dimension to columnAxis
+    	 *  and to enclosing pivotComponent's columnFields
+    	 *  and populates the popUp
+    	 */
+    	private function addColumns(event:DragEvent):void
+    	{
+    		if(event.dragInitiator is MeasuresList || event.dragInitiator == seriesList)
+    		{
+    			return;
+    		}
+    		getPivotComponent();
+    			
+    		cString = List(event.dragInitiator).selectedItem.toString();
+    		var indexC:int  = (pivotComponent.rowFields.indexOf(cString) + pivotComponent.columnFields.indexOf(cString) +
+    								 pivotComponent.slicerFields.indexOf(cString) + pivotComponent.displayedFacts.indexOf(cString));
+    		if(indexC != -4) 
+    		{
+    			Alert.show("Dimension already exists");
+    			return;
+    		}
+    		var cols:Array = pivotComponent.columnFields;    		
+    		cols.push(cString);
+    		cFlag = true;
+    		cursorManager.setBusyCursor();
+    		pivotComponent.columnFields = cols;
+    	}
+    	
+    	/**
+    	 *  @private
+    	 */
+    	private function dragEnterSlicer(event:DragEvent):void
+    	{
+    		if(event.dragInitiator is MeasuresList || event.dragInitiator == seriesList)
+    		{
+    			return;
+    		}
+    		getPivotComponent();
+    		if(pivotComponent.rowFields.length !=0 || pivotComponent.columnFields.length !=0 )
+    		DragManager.acceptDragDrop(slicerBox);
+    	}
+    	
+    	private function dragSeries(event:DragEvent):void
+    	{
+    		trace("hi");
+    		if(event.dragInitiator is MeasuresList)
+    		{
+    			if(event.dragSource.hasFormat("items"))
+    			{
+    			var items:Array = event.dragSource.dataForFormat("items") as Array;
+    			getPivotComponent();
+    			var index:int = pivotComponent.displayedFacts.indexOf(items[0]);
+    			if(index == -1) DragManager.acceptDragDrop(seriesList);
+    			}
+    		}
+    	}	
+    	/**
+    	 *  @private
+    	 *  Adds the dimension to slicerAxis
+    	 *  and to enclosing pivotComponent's slicerFields
+    	 *  and populates the popUp
+    	 */
+    	private function addSlicer(event:DragEvent):void
+    	{
+    		if(event.dragInitiator is MeasuresList || event.dragInitiator == seriesList)
+    		{
+    			return;
+    		}
+    		
+    		getPivotComponent();
+    		
+    		sString = List(event.dragInitiator).selectedItem.toString();
+    		var indexC:int  = (pivotComponent.rowFields.indexOf(sString) + pivotComponent.columnFields.indexOf(sString) +
+    								 pivotComponent.slicerFields.indexOf(sString) + pivotComponent.displayedFacts.indexOf(sString));
+    		if(indexC != -4) 
+    		{
+    			Alert.show("Dimension already exists");
+    			return;
+    		}
+    		var slicers:Array = pivotComponent.slicerFields;
+    		slicers.push(sString);
+    		cursorManager.setBusyCursor();
+    		pivotComponent.slicerFields = slicers;
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds the newly selected measure to pivotComponent's displayedFacts
+    	 */
+    	private var currentDroppedMeasure:String; 
+    	private function showAddedSeries(event:DragEvent):void
+    	{
+    		getPivotComponent();
+    		cube = pivotComponent.cube;
+    		var obj:Object = List(event.dragInitiator).selectedItem;
+    		currentDroppedMeasure = String(obj);
+    		if(!isMeasure(obj))
+    		{
+    			//Alert.show("Please drop a measure ");
+    			Alert.show("Please drop a measure", "Alert",Alert.OK , this,alertListener, null, Alert.OK);
+    			return;
+    		}
+    		else
+    		{
+    			seriesList.dataProvider.addItem(obj);    		
+    			event.stopImmediatePropagation();
+    			var temp:Array = pivotComponent.displayedFacts;
+    			temp.push(obj);
+    			pivotComponent.displayedFacts = temp;  		
+    		}
+    
+    	}
+    	
+    	  private function alertListener(eventObj:CloseEvent):void 
+    	  {
+                // Check to see if the OK button was pressed.
+                if (eventObj.detail==Alert.OK) 
+                {
+                  var sArray:Array = ArrayCollection(seriesList.dataProvider).toArray();
+                  if(sArray)
+                  {
+                  	var index:int = sArray.indexOf(currentDroppedMeasure);
+                  	if(index != -1)
+                  	{
+                  		sArray.splice(index,1);
+                  		seriesList.dataProvider = sArray ;
+                  	}
+                  }
+                  else
+                  seriesList.dataProvider = [];
+                }
+            }
+
+    
+    	private function isMeasure(obj:Object):Boolean
+    	{
+    		getPivotComponent();
+    		var index:int = pivotComponent.facts.indexOf(obj);
+    		if(index == -1) return false ;
+    		else return true ;
+    	}
+    	/**
+    	 *  @privae
+    	 *  Removes the selected measure from pivotComponent's displayedFacts
+    	 */
+    	private function removeDeletedSeries(event:DragEvent):void
+    	{
+    		if(event.action == "none") return ;
+    		getPivotComponent();
+    		cube = pivotComponent.cube;
+    		var obj:Object = seriesList.dataProvider.removeItemAt(seriesList.selectedIndex);    		
+    		event.stopImmediatePropagation();
+    		var temp:Array = pivotComponent.displayedFacts;
+    		var index:int = temp.indexOf(obj);
+    		temp.splice(index,1);
+    		//temp.removeItemAt(temp.getItemIndex(obj));
+    		pivotComponent.displayedFacts = temp;
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds a dimension to DimensionList when it is removed from
+    	 *  either row or column or slicer axis
+    	 */
+    	private function addToDimension(event:ChildExistenceChangedEvent):void
+	   	{
+	   		var length:int = pivotComponent.numChildren;
+	   		for (var i:int = 0; i < length; i++)
+	   		{
+	   			addToDimensionListChild(pivotComponent.getChildAt(i), event);
+       		}
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  Adds a dimension to a DisplayObject if it is a DimensionList
+    	 */ 
+    	private function addToDimensionListChild(obj:DisplayObject, event:ChildExistenceChangedEvent):void
+    	{
+    		if(obj is UIComponent)
+    		{
+    			var length:int = UIComponent(obj).numChildren;
+	   			for (var i:int = 0; i < length; i++)
+    			{
+    				if(UIComponent(obj).getChildAt(i) is DimensionList)
+    				{
+    					List(UIComponent(obj).getChildAt(i)).dataProvider.addItem(ChartPopUpButton(event.relatedObject).label);
+    					return;
+    				}
+    				else
+    				{
+    					addToDimensionListChild(UIComponent(obj).getChildAt(i), event);
+    				}
+    			}
+    		}
+    	}
+    	
+    	/**
+    	 *  @private
+    	 *  When a 'Delete' key is pressed,
+    	 *  the popUpButton which is under focus is deleted
+    	 *  and the corresponding dimension is added back to DimensionList
+    	 */
+    	private function deleteAttribute(event:KeyboardEvent):void
+    	{
+    		var deletedItem:ChartPopUpButton;
+    		var index:int
+    		var pos:String;
+    		//cursorManager.setBusyCursor();
+    		if(event.charCode == 127 )
+    		{
+    			
+    			if(event.currentTarget == columnsBox)
+    			{
+    				pos = "col" ;
+    				deletedItem = columnsBox.removeChild(DisplayObject(columnsBox.focusManager.getFocus())) as ChartPopUpButton;
+    				index = pivotComponent.columnFields.indexOf(deletedItem.label);
+    				var columns:Array = pivotComponent.columnFields;    				
+    				columns.splice(index, 1);
+    				pivotComponent.columnFields = columns;
+    			}
+    			else if(event.currentTarget == rowsBox)
+    			{	
+    				pos = "row";
+    				deletedItem = rowsBox.removeChild(DisplayObject(rowsBox.focusManager.getFocus())) as ChartPopUpButton;
+    				index = pivotComponent.rowFields.indexOf(deletedItem.label);
+    				var rows:Array = pivotComponent.rowFields;
+    				rows.splice(index, 1);
+    				pivotComponent.rowFields = rows;
+    			}
+    			else if(event.currentTarget == slicerBox)
+    			{
+    				pos = "sli" ;
+    				deletedItem = slicerBox.removeChild(DisplayObject(slicerBox.focusManager.getFocus())) as ChartPopUpButton;
+    				index = pivotComponent.slicerFields.indexOf(deletedItem.label);
+    				var slicers:Array = pivotComponent.slicerFields;
+    				slicers.splice(index,1);
+    				pivotComponent.slicerFields = slicers;    				
+    			}
+    			
+    			
+    		if( pivotComponent.rowFields.length == 0 && pivotComponent.columnFields.length == 0 )
+    			{
+    				olapChart.dataProvider = null;
+    				legendCharts.dataProvider = []
+    				slicerBox.removeAllChildren();
+    				seriesList.dataProvider = [];
+    				rowsBox.removeAllChildren();
+    				columnsBox.removeAllChildren();
+    				//olapChart = null;
+    				//chartPanel.removeAllChildren();
+    				pivotComponent.dispatchEvent(new Event("resetPivotTable"));	
+    			}
+    		}
+    		
+    		
+    	}
+    	
+    	private function removeDimension(event:Event):void
+    	{
+    		var deletedItem:ChartPopUpButton;
+    		var pos:String = pivotComponent.deletePos;
+    		var dname:String = pivotComponent.deleteName;
+    		var d:ChartPopUpButton; 
+    		getPivotComponent();
+    		var i:int = 0;
+    		if(pos == "col" )
+    			{
+    				for(i=0 ; i<columnsBox.numChildren ; i++ )
+    				{
+    					d = ChartPopUpButton(columnsBox.getChildAt(i));
+    					if ( d.label == dname ) 
+    						deletedItem = columnsBox.removeChild(d) as ChartPopUpButton;
+    					
+    				}
+    				
+    				
+    			}
+    		if(pos == "row")	
+    			{
+    				for(i=0 ; i<rowsBox.numChildren ; i++ )
+    				{
+    					d =ChartPopUpButton( rowsBox.getChildAt(i));
+    					if ( d.label == dname ) 
+    						deletedItem = rowsBox.removeChild(d) as ChartPopUpButton;
+    					
+    				}
+    			}
+    		else if(pos == "sli")
+    			{
+    				for(i=0 ; i<slicerBox.numChildren ; i++ )
+    				{
+    					d =ChartPopUpButton( slicerBox.getChildAt(i));
+    					if ( d.label == dname ) 
+    						deletedItem = slicerBox.removeChild(d) as ChartPopUpButton;
+    					
+    				}
+    				
+    							
+    			}
+    		
+    	}
+    	/**
+    	 *  @private
+    	 */
+    	private function dragOverHandler(event:DragEvent):void 
+		{
+			if(event.dragInitiator is MeasuresList || event.dragInitiator == seriesList)
+			{
+				DragManager.showFeedback(DragManager.NONE);
+			}
+			if(event.ctrlKey) 
+			{ 
+				event.action = DragManager.COPY;
+				
+			}
+			else if (event.shiftKey) 
+			{ 
+				event.action = DragManager.LINK;
+			}
+			else 
+			{ 
+				event.action = DragManager.MOVE;
+			}
+
+		}
+		
+		private function dragOverSeries(event:DragEvent):void
+		{
+			if(event.dragInitiator is MeasuresList)
+			{	
+				if(event.dragSource.hasFormat("items"))
+    			{
+    				var items:Array = event.dragSource.dataForFormat("items") as Array;
+    				getPivotComponent();
+    				var index:int = pivotComponent.displayedFacts.indexOf(items[0]);
+    				if(index != -1) DragManager.showFeedback(DragManager.NONE); 
+    				else DragManager.showFeedback(DragManager.MOVE);
+    			}
+			}	
+		}
+		
+		/**
+		 *  @private
+		 *  Called when something changes in the 
+		 *  enclosing PivotComponent
+		 */
+		private function runNewQuery(event:Event):void
+		{
+			getPivotComponent();
+			cube = pivotComponent.cube;
+			var length:int;
+			rowsBox.removeAllChildren();
+			columnsBox.removeAllChildren();
+			slicerBox.removeAllChildren();
+			length = rowsBox.numChildren;
+			var labelArray:Array = [];
+			
+			for(var i:int = 0; i < length; i++)
+			{
+				labelArray.push(ChartPopUpButton(rowsBox.getChildAt(i)).label);
+			}
+			length = pivotComponent.rowFields.length;
+			for(i = 0; i < length; i++)
+			{
+				if(labelArray.indexOf(pivotComponent.rowFields[i]) == -1)
+				{
+					var rowPopUp:ChartPopUpButton = addPopUp(pivotComponent.rowFields[i]);
+					rowsBox.addChildAt(rowPopUp, i);
+				}
+			}
+			/* if(length != rowsBox.numChildren)
+			{
+				
+				rowsBox.removeAllChildren();
+				for(var i:int = 0; i < length; i++)
+				{
+					var rowPopUp:ChartPopUpButton = addPopUp(pivotComponent.rowFields[i]);
+					rowsBox.addChild(rowPopUp);
+				}
+			} */
+			length = columnsBox.numChildren;
+			labelArray = [];
+			for(i = 0; i < length; i++)
+			{
+				labelArray.push(ChartPopUpButton(columnsBox.getChildAt(i)).label);
+			}
+			length = pivotComponent.columnFields.length;
+			for(i = 0; i < length; i++)
+			{
+				if(labelArray.indexOf(pivotComponent.columnFields[i]) == -1)
+				{
+					var colPopUp:ChartPopUpButton = addPopUp(pivotComponent.columnFields[i]);
+					columnsBox.addChildAt(colPopUp,i);
+				}
+			}
+			
+			length = slicerBox.numChildren;
+			labelArray = [];
+			for(i = 0; i < length; i++)
+			{
+				labelArray.push(ChartPopUpButton(slicerBox.getChildAt(i)).label);
+			}
+			length = pivotComponent.slicerFields.length;
+			for(i = 0; i < length; i++)
+			{
+				if(labelArray.indexOf(pivotComponent.slicerFields[i]) == -1)
+				{
+					var slicerPopUp:ChartPopUpButton = addPopUp(pivotComponent.slicerFields[i]);
+					slicerBox.addChildAt(slicerPopUp,i);
+				}
+			}
+			/* if(length != slicerBox.numChildren)
+			{
+				columnsBox.removeAllChildren();
+				for(i = 0; i < length; i++)
+				{
+					var slicerPopUp:ChartPopUpButton = addPopUp(pivotComponent.slicerFields[i]);
+					slicerBox.addChild(slicerPopUp);
+				}
+			} */
+			length = pivotComponent.displayedFacts.length;
+			if(length != seriesList.dataProvider.length)
+			{
+				seriesList.dataProvider = [];
+				for(i = 0; i < length; i++)
+				{
+					seriesList.dataProvider.addItem({label:pivotComponent.displayedFacts[i]});
+				}
+			}
+			
+			runQuery();
+		}
+		
+	
+		private function cubeCompleteHandler(event:Event):void
+		{
+			 getPivotComponent();
+			cube=pivotComponent.cube;
+			var labelArray:Array = [];
+			var index:int ;
+			var i:int
+			if(rFlag)
+			{	
+				for(i= 0; i < rowsBox.numChildren; i++)
+				{
+				labelArray.push(ChartPopUpButton(rowsBox.getChildAt(i)).label);
+				}
+				index = labelArray.indexOf(rString);
+				if(index == -1)
+				{
+					var rowPopUp:ChartPopUpButton = addPopUp(rString);
+    				rowsBox.addChild(rowPopUp);
+    				rFlag=false; 
+   				}
+   			
+   			}
+   			if(cFlag)
+   			{
+   				cFlag=false;
+   				for(i = 0; i < columnsBox.numChildren; i++)
+				{
+				labelArray.push(ChartPopUpButton(columnsBox.getChildAt(i)).label);
+				}
+				index = labelArray.indexOf(cString);
+				if(index == -1)
+				{
+   					var colPopUp:ChartPopUpButton = addPopUp(cString);
+    				columnsBox.addChild(colPopUp);
+    			}
+   			}
+   			if(sFlag)
+   			{
+   				sFlag=false;
+   				for(i = 0; i < slicerBox.numChildren; i++)
+				{
+				labelArray.push(ChartPopUpButton(slicerBox.getChildAt(i)).label);
+				}
+				index = labelArray.indexOf(sString);
+				if(index == -1)
+				{
+   					var slicerPopUp:ChartPopUpButton = addPopUp(sString);
+    				slicerBox.addChild(slicerPopUp);
+   				}
+   			}
+    		var eventObj:Event=new Event("queryChanged");
+    		this.dispatchEvent(eventObj);
+    		eventObj.stopPropagation(); 
+    		
+		}
+		
+		private function showTheMembers(event:Event):void
+		{
+			var nC:int=columnsBox.numChildren
+			for(var i:int=0;i<nC;i++)
+			{
+				var d:DisplayObject = columnsBox.getChildAt(i);	
+			}
+		}
+		
+		private function resetChart(event:Event):void
+		{
+			olapChart.dataProvider = null ;
+			legendCharts.dataProvider = []
+			columnsBox.removeAllChildren();
+			rowsBox.removeAllChildren();
+			slicerBox.removeAllChildren();
+			measuresList.resetDp();
+			pivotComponent.displayedFacts = []
+			pivotComponent.filterMembers =[];
+			seriesList.dataProvider = [];	
+		}	
+		
+		private function getMeasuresList():void
+		{
+					
+		}	
+	]]>
+</mx:Script>	
+	
+	
+	<mx:VBox width="100" height="500">
+		
+		<mx:Spacer height="10%" width="100%"/>
+		<!-- row -->
+		<mx:Label text="Row Fields"/>
+		<mx:VBox id="rowsBox" height="400" width="100" dragEnter="dragEnterRows(event)" 
+			dragDrop="addRows(event)" dragOver="dragOverHandler(event)"
+			 keyUp="deleteAttribute(event)" toolTip="Drop Row Fields Here"
+			borderColor="0xFFFFFF" borderStyle="solid"/>
+	</mx:VBox>	
+	<mx:VBox width="80%" height="100%">
+		
+		<!-- slicer-->
+		<mx:Label text="Slicer Fields"/>
+		<mx:HBox id="slicerBox" height="10%" width="100%" dragEnter="dragEnterSlicer(event)" 
+			dragDrop="addSlicer(event)" dragOver="dragOverHandler(event)"
+			 keyUp="deleteAttribute(event)" toolTip="Drop Slicer Fields Here"
+			borderColor="0xFFFFFF" borderStyle="solid"/>
+				
+		<mx:VBox height="80%" width="100%" borderColor="0xFFFFFF" borderStyle="solid">
+			<mx:Panel id="chartPanel" height="90%" width="100%"/>
+			<mx:Legend  id = "legendCharts" dataProvider="{_olapChart}" height="10%" width="100%" direction="horizontal"/>
+		</mx:VBox>
+		
+		<mx:Label text="Column Fields"/>
+		<!-- col -->
+		<mx:HBox id="columnsBox" height="10%" width="100%" dragEnter="dragEnterColumns(event)" 
+			dragDrop="addColumns(event)" dragOver="dragOverHandler(event)" backgroundAttachment="" 
+			 keyUp="deleteAttribute(event)" toolTip="Drop Column Fields Here"
+			borderColor="0xFFFFFF" borderStyle="solid"/>		
+	</mx:VBox>
+	<mx:VBox width="100" height="500">
+		<mx:Spacer height="10%" width="100%"/>
+		<mx:Label text="Measures"/>
+		<!-- series -->
+		<mx:List id="seriesList" labelField="label" height="400" width="100" dataProvider="{[]}" dragEnabled="true" dragEnter="dragSeries(event)" dragOver="dragOverSeries(event)"
+			 dragComplete="removeDeletedSeries(event)" 
+			dragDrop="showAddedSeries(event)" toolTip="Drop Series Here" color = "0xFFFFFF" alternatingItemColors="[0x3f3f3f,0x3f3f3f]"/> 
+	</mx:VBox>
+	
+	
+</mx:HBox>
+

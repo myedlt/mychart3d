@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+				layout="absolute" applicationComplete="initApp()">
+	
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:OLAPCube name="FlatSchemaCube" id="myMXMLCube" dataProvider="{cubedp}" complete="runQuery(event)">  
+			<mx:OLAPDimension name="TimeDim">  
+				<mx:OLAPAttribute name="Duration" dataField="@duration" displayName="工频周期"/>  
+				<mx:OLAPAttribute name="Phase" dataField="@phase" displayName="相位"/>  
+				<mx:OLAPHierarchy name="Time-PeriodHier" hasAll="true">  
+					<mx:OLAPLevel attributeName="Duration"/>  
+					<mx:OLAPLevel attributeName="Phase"/>  
+				</mx:OLAPHierarchy>   
+			</mx:OLAPDimension>
+			
+			<mx:OLAPDimension name="PowerDim">  
+				<mx:OLAPAttribute name="QPhase" dataField="@qphase" displayName="放电幅值"/>  
+				<mx:OLAPHierarchy name="Power-PeriodHier" hasAll="true">  
+					<mx:OLAPLevel attributeName="QPhase"/>  
+				</mx:OLAPHierarchy>   
+			</mx:OLAPDimension>  
+
+			<mx:OLAPMeasure name="Qavg" dataField="@z" aggregator="AVG"/>
+			<mx:OLAPMeasure name="Qcount" dataField="@cthreshhold" aggregator="SUM"/>
+			
+		</mx:OLAPCube>
+	
+		<mx:XMLListCollection id="cubedp"/>
+		<mx:XML id="data2D01" source="assets/dataC.xml" />
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CubeEvent;
+			import mx.messaging.messages.ErrorMessage;
+			import mx.olap.IOLAPCube;
+			import mx.olap.IOLAPQuery;
+			import mx.olap.IOLAPQueryAxis;
+			import mx.olap.OLAPAxisPosition;
+			import mx.olap.OLAPQuery;
+			import mx.olap.OLAPResult;
+			import mx.olap.OLAPSet;
+			import mx.olap.OLAPTuple;
+			import mx.rpc.AsyncResponder;
+			import mx.rpc.AsyncToken; 
+			
+			private var xmlUrl:String = "assets/data/chart.xml";
+			private var dp:XMLList;
+			
+			private var configXML:XML;
+			private var dataXML:XML= 	<ds>
+											<cube xzoom="400" yzoom="400" zzoom="400" width="600" depth="400">
+												<material front="0x448EBA" back="0xFF000" top="0x4795C4" bottom="0xFF000" left="0xFFAE00" right="0x316788"/>
+											</cube>
+										</ds>;
+			
+			private function initApp():void
+			{
+				var urlReq:URLRequest = new URLRequest(xmlUrl);
+				var urlLoader:URLLoader = new URLLoader();
+				
+				urlLoader.addEventListener(Event.COMPLETE, xmlComplete);
+				urlLoader.load(urlReq);	
+				
+				//
+				var urlReq999:URLRequest = new URLRequest("assets/config.xml");
+				var urlLoader999:URLLoader = new URLLoader();
+				
+				urlLoader999.addEventListener(Event.COMPLETE, configXMLComplete);
+				urlLoader999.load(urlReq999);						
+			}
+			
+			private function xmlComplete(evt:Event):void
+			{
+				var xml:XML = XML(evt.target.data);
+				
+				dp = xml.r;
+				// 计算准备数据
+				for each(var x:XML in dp)
+				{
+					x.@duration = Math.floor((x.@x)/1000);				// 50个工频周期
+					x.@phase = Math.floor(((x.@x)%1000)/10);			// 100个相位
+					x.@cthreshhold	= (x.@z > 20)?1:0;					// 基于阀值得值0/1，用于计数
+					x.@qphase	= Math.floor((x.@z)/8);					// 放电幅值分区，最大800，100份
+					
+				}
+				
+				// 显示原始数据
+				datagrid1.dataProvider = dp;
+
+				// 设置OLAP Cube数据源，将会触发OLAP的建模与查询
+				cubedp.source = dp;
+				this.myMXMLCube.refresh();
+				
+			}
+			
+			private function configXMLComplete(evt:Event):void
+			{
+				configXML = XML(evt.target.data);
+				
+			}
+			
+			// Create the OLAP query. 
+			private function getQuery(cube:IOLAPCube):IOLAPQuery { 
+				// Create an instance of OLAPQuery to represent the query.  
+				var query:OLAPQuery = new OLAPQuery; 
+				
+				// Get the row axis from the query instance. 
+				var rowQueryAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.ROW_AXIS); 
+				
+				// Create an OLAPSet instance to configure the axis. 
+				var qphaseSet:OLAPSet = new OLAPSet; 
+				qphaseSet.addElements( cube.findDimension("PowerDim").findAttribute("QPhase").members); 	// 包括All，children不还All
+				
+				// Get the column axis from the query instance, and configure it 
+				// to aggregate the columns by the Quarter dimension.  
+				var colQueryAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.COLUMN_AXIS); 
+				
+				var phaseSet:OLAPSet= new OLAPSet; 
+				phaseSet.addElements(cube.findDimension("TimeDim").findAttribute("Phase").members); 
+
+				
+				rowQueryAxis.addSet(phaseSet); 
+				colQueryAxis.addSet(qphaseSet); 
+
+				// 使用默认计算
+				// Create the slicer axis.   
+				var slicerQueryAxis:IOLAPQueryAxis = query.getAxis(OLAPQuery.SLICER_AXIS);     
+				// Create an OLAPSet instance to configure the axis.  
+				var cthreshholdSet:OLAPSet= new OLAPSet;  
+				// Use OLAPDimension.findMember() to add the Cost measure.  
+				cthreshholdSet.addElement(cube.findDimension("Measures").findMember("Qcount"));  
+				slicerQueryAxis.addSet(cthreshholdSet);  
+				
+				return query;        
+			}
+			
+			// Event handler to execute the OLAP query  
+			// after the cube completes initialization. 
+			private function runQuery(event:CubeEvent):void { 
+				// Get cube. 
+				var cube:IOLAPCube = IOLAPCube(event.currentTarget); 
+				// Create a query instance. 
+				var query:IOLAPQuery = getQuery(cube); 
+				// Execute the query. 
+				var token:AsyncToken = cube.execute(query); 
+				// Set up handlers for the query results. 
+				token.addResponder(new AsyncResponder(showResult, showFault)); 
+			} 
+			
+			// Handle a query fault. 
+			private function showFault(error:ErrorMessage, token:Object):void { 
+				Alert.show(error.faultString); 
+			} 
+			
+			// Handle a successful query by passing the query results to  
+			// the OLAPDataGrid control.. 
+			private var cubeResult:OLAPResult;
+			private function showResult(result:Object, token:Object):void { 
+				if (!result) { 
+					Alert.show("No results from query."); 
+					return; 
+				} 
+				
+				cubeResult = result as OLAPResult;
+				myOLAPDGCount.dataProvider= cubeResult; 
+				
+				// 额外工作：获取三维数据
+				var rowLength:Number = cubeResult.getAxis(OLAPQuery.ROW_AXIS).positions.length;
+				
+				var newChartData:Array = [];
+				
+				for(var iRow:int=0;iRow<rowLength;iRow++)
+				{
+					var rowAxis:IOLAPQueryAxis = cubeResult.query.getAxis(OLAPQuery.ROW_AXIS);
+					var rowTuple:OLAPTuple = rowAxis.tuples[iRow];
+					var rowKey:String = rowTuple.explicitMembers.toArray().join(",");
+
+					if (rowKey.indexOf("(All)") > -1) 
+						continue;
+
+					rowKey = rowKey.split(".").reverse().join();
+					rowKey = rowKey.substr(1,rowKey.indexOf("]",0) -1);
+					// 
+					
+					var colAxis:IOLAPQueryAxis = cubeResult.query.getAxis(OLAPQuery.COLUMN_AXIS);
+					var columnLength:Number = cubeResult.getAxis(OLAPQuery.COLUMN_AXIS).positions.length;
+
+					for (var i:int=0;i<columnLength;i++) {
+						var tuple:OLAPTuple = colAxis.tuples[i];
+						var key:String = tuple.explicitMembers.toArray().join(",");
+						if (key.indexOf("(All)") > -1) 
+							continue;            
+
+						key = key.split(".").reverse().join();
+						key = key.substr(1,key.indexOf("]",0) -1);
+						//newChartData.push({key:key, value:cubeResult.getCell(iRow, i).value});
+						
+						var measureValue:Number = cubeResult.getCell(iRow, i).value;
+						newChartData.push({row:rowKey, key:key, value:measureValue});
+						var xmlRow:XML = <r/>
+						
+						xmlRow.@x = rowKey;
+						xmlRow.@y = key;
+						xmlRow.@z = measureValue;
+
+						dataXML.appendChild(xmlRow);
+						
+					}					
+				}
+				
+				// 使用DataGrid显示从OLAPDataGrid中抽取的数据
+				olapDGCount.dataProvider = newChartData;
+				
+			}
+			
+			[Bindable]
+			private var chartData:Array;
+			
+			
+			private function gridSelectionChanged():void {
+				if (!(myOLAPDGCount.selectedItem is OLAPAxisPosition)) 
+					return;
+				
+				var rowIndex:Number = myOLAPDGCount.selectedIndex;
+				
+				var axis:IOLAPQueryAxis = cubeResult.query.getAxis(OLAPQuery.COLUMN_AXIS);
+				var columnLength:Number = cubeResult.getAxis(OLAPQuery.COLUMN_AXIS).positions.length;
+				var newChartData:Array = [];
+				
+				for (var i:int=0;i<columnLength;i++) {
+					var tuple:OLAPTuple = axis.tuples[i];
+					var arr:Array = tuple.explicitMembers.toArray();
+					var key:String = tuple.explicitMembers.toArray().join(",");
+					key = key.split(".").reverse().join();
+					key = key.substr(1,key.indexOf("]",0) -1);
+					if (key.indexOf("(All)") > -1) 
+						continue;            
+					newChartData.push({key:key, value:cubeResult.getCell(rowIndex, i).value});
+				}
+				chartData = newChartData;
+				//if（true==rbCount.enabled)
+				//{
+				//	chart.dataProvider = chartData;
+				//}
+				//else if(rbAvg.enabled == true)
+				//{
+				// chartCount 显示计数结果的柱状图
+				chartCount.dataProvider = chartData;
+				//}
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:DataGrid x="1031" y="10" height="580" id="datagrid1" width="268">
+		<mx:columns>
+			<mx:DataGridColumn headerText="时序" dataField="@x"/>
+			<mx:DataGridColumn headerText="周期" dataField="@duration"/>
+			<mx:DataGridColumn headerText="相位" dataField="@phase"/>
+			<mx:DataGridColumn headerText="放电" dataField="@z"/>
+			<mx:DataGridColumn headerText="计数" dataField="@cthreshhold"/>
+			<mx:DataGridColumn headerText="幅值区间" dataField="@qphase"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	
+	
+	<mx:TabNavigator x="19" y="10" width="991" height="579" creationPolicy="all">
+		
+		<mx:Canvas label="计数" width="100%" height="100%">
+			<mx:ViewStack x="10" y="44" id="viewstackCount" width="969" height="464">
+				<mx:Canvas label="2D(相位-放电)" width="100%" height="100%">
+					<mx:ColumnChart x="10" y="10" id="chartCount" width="949" showDataTips="true" type="clustered"  height="229">
+						<mx:horizontalAxis>
+							<mx:LinearAxis title="相位"/>
+						</mx:horizontalAxis>
+						
+						<mx:verticalAxis>
+							<mx:LinearAxis title="阀值计数" id="axisV" minimum="0" maximum="200" interval="50" />
+						</mx:verticalAxis>
+						
+						<mx:series>
+							<mx:ColumnSeries displayName="阀值计数" xField="key" yField="value" />
+						</mx:series>
+					</mx:ColumnChart>
+					<mx:OLAPDataGrid  id="myOLAPDGCount" x="10" y="247" width="949" height="207" itemClick="gridSelectionChanged()" minColumnWidth="50" />			
+				</mx:Canvas>
+				<mx:Canvas label="3D(相位-周期-放电)"  width="100%" height="100%">
+					<mx:Canvas id="chart3DCanvas" width="808" height="464"/>
+					<mx:DataGrid id="olapDGCount" x="826" y="151" width="143" height="275">
+						<mx:columns>
+							<mx:DataGridColumn headerText="相位" dataField="row"/>
+							<mx:DataGridColumn headerText="幅值区" dataField="key"/>
+							<mx:DataGridColumn headerText="计数" dataField="value"/>
+						</mx:columns>
+					</mx:DataGrid>
+					<mx:Button x="914" y="434" label="To3D" click=""/>
+					<mx:TextArea id="xmlTA" x="826" y="0" width="143" height="143"/>
+				</mx:Canvas>
+			</mx:ViewStack>
+			<mx:LinkBar x="770" y="10" dataProvider="viewstackCount">
+			</mx:LinkBar>
+		</mx:Canvas>
+
+		<mx:Canvas label="均值" width="100%" height="100%">
+			<mx:ColumnChart id="chartAvg" width="650" height="251" x="14" y="0" dataProvider="{data2D01.r}">
+				<mx:verticalAxis>
+					<mx:LinearAxis title="放电幅值(mV)" minimum="0" maximum="900" interval="300" />
+				</mx:verticalAxis>				
+				<mx:horizontalAxis>
+					<mx:LinearAxis title="相位"/>
+				</mx:horizontalAxis>
+				<mx:series>
+					<mx:ColumnSeries xField="key" yField="value" />
+				</mx:series>
+			</mx:ColumnChart>
+		</mx:Canvas>
+		
+	</mx:TabNavigator>
+	
+</mx:Application>
