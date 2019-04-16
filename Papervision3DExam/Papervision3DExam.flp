@@ -1,0 +1,7 @@
+﻿<flash_project name="Papervision3DExam" version="1">
+    <project_folder name="src" expanded="true">
+        <project_file path="./src/Papervision3DExam.as" filetype="as" />
+        <project_file path="./src/Example009.as" filetype="as" />
+        <project_file path="./src/Example009a.as" filetype="as" />
+    </project_folder>
+</flash_project>

@@ -11,8 +11,11 @@
 				stage.align = StageAlign.TOP_LEFT; 			// 当影片输出的时候，整个影片相对浏览器的左上方对齐
 				stage.scaleMode = StageScaleMode.NO_SCALE; 	// 影片不会跟随浏览的尺寸大小而发生缩放。
 
-				chart_11.loadData();
-				chart_12.loadData();
+				chart_11.updateConfig(chart01config);
+				chart_11.updateData(chart01data);
+				
+				chart_12.updateConfig(chart02config);
+				chart_12.updateData(chart02data);
 			}
 			
 			private function customizeLabel(cat:Object,pcat:Object,ax:LinearAxis):String
@@ -41,19 +44,21 @@
 	</mx:Script>
 	<mx:XML id="data2DJQ" source="assets/chart03/dataC.xml" />
 	<mx:XML id="data2DJN" source="assets/chart04/dataD.xml" />
+	
+	<mx:XML id="chart01config" source="assets/chart01/config.xml" />
+	<mx:XML id="chart01data" source="assets/chart01/data.xml" />
+	<mx:XML id="chart02config" source="assets/chart01/config.xml" />
+	<mx:XML id="chart02data" source="assets/chart01/data.xml" />
+	
 	<mx:Array id="chartAvgGridLines">
 		<mx:GridLines direction="both" />
 	</mx:Array>
 	<mx:Array id="chartCountGridLines">
 		<mx:GridLines direction="both" />
 	</mx:Array>
-	<chart3d:Chart3DCanvas id="chart_11" x="428.6" y="18.5" 
-						   configXMLUrl="assets/chart01/config.xml" 
-						   dataXMLUrl="assets/chart01/data.xml" isDebug="false" borderStyle="solid" iViewIndex="0"/>
+	<chart3d:Chart3DCanvas id="chart_11" x="428.6" y="18.5"  isDebug="false" borderStyle="solid" />
 	
-	<chart3d:Chart3DCanvas id="chart_12" x="428.6" y="326.05" 
-						   configXMLUrl="assets/chart02/config.xml" 
-						   dataXMLUrl="assets/chart02/data.xml" isDebug="false" borderStyle="solid" iViewIndex="0"/>
+	<chart3d:Chart3DCanvas id="chart_12" x="428.6" y="326.05" isDebug="false" borderStyle="solid" />
 	
 	<mx:Canvas x="21" y="18" width="400" height="300" borderStyle="solid">
 		<mx:ColumnChart id="chartAvg" width="100%" height="100%" dataProvider="{data2DJQ.r}" showDataTips="true" backgroundElements="{chartAvgGridLines}">

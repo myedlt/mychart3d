@@ -1,0 +1,55 @@
+public var comGraphic:transAlarmGraphic = new transAlarmGraphic();
+
+PopUpManager.addPopUp(comGraphic,this.map,true);						
+var monitorno:String = this.dgAlData.selectedItem.MONITORNO;
+var sensortype:String = this.dgAlData.selectedItem.SENSORTYPE; 
+var monitortime:String = this.dgAlData.selectedItem.ALARMTIME;
+var sensorpos:String = this.dgAlData.selectedItem.SENSORPOS;
+loadChart(monitorno,sensortype,monitortime,sensorpos);
+
+public function loadChart(monitorno:String,sensortype:String,monitortime:String,sensorpos:String):void
+			{
+				   var chartUrlHead:String ="http://"+AlarmWebSiteUrl+"/YPGISDataService/Get3DChartData/";				  
+					var chartAUrl:String = chartUrlHead + "ReadBlobFile.aspx";		
+					var alarmChartA:Chart = new Chart(chartAUrl,monitorno,sensortype,monitortime,sensorpos);				 	
+					comGraphic.bCanvas.rawChildren.addChild(alarmChartA);	
+									
+					alarmChartA.height = comGraphic.bCanvas.height/1.3;
+					alarmChartA.width = comGraphic.bCanvas.width/1.3;
+				 
+				 	var chartBUrl:String =chartUrlHead + "ReadBlobFileFQN.aspx";	
+					var alarmChartB:ChartB = new ChartB(chartBUrl,monitorno,sensortype,monitortime,sensorpos);			
+						
+					comGraphic.dCanvas.rawChildren.addChild(alarmChartB);					
+					alarmChartB.height = comGraphic.dCanvas.height/1.3;
+					alarmChartB.width = comGraphic.dCanvas.width/1.3;	
+					
+					var fQUrl:String = chartUrlHead + "ReadTextFileFQ.aspx";
+					fQUrl =fQUrl+"?equipmentno=" + monitorno +"&sensortype="+ sensortype +"&monitortime="+ monitortime + "&sensorpos="+ sensorpos; 				 
+									 
+					var urlReq:URLRequest = new URLRequest(fQUrl);
+					var urlLoader:URLLoader = new URLLoader();					
+					urlLoader.addEventListener(Event.COMPLETE, createChartCFromXML);
+					urlLoader.load(urlReq);							
+					 
+					var fnUrl:String = chartUrlHead + "ReadTextFileFN.aspx";
+					fnUrl =fnUrl+"?equipmentno=" + monitorno +"&sensortype="+ sensortype +"&monitortime="+ monitortime+"&sensorpos="+ sensorpos;
+					 
+					var urlReqD:URLRequest = new URLRequest(fnUrl);					
+					var urlLoaderD:URLLoader = new URLLoader();									
+					
+					urlLoaderD.addEventListener(Event.COMPLETE, createChartDFromXML);
+					urlLoaderD.load(urlReqD);			
+			}
+			
+			private function createChartCFromXML(evt:Event):void
+			{
+				var x:XML = XML(evt.target.data);				
+				comGraphic.chartAvg.dataProvider = x.r;
+			}
+	
+			private function createChartDFromXML(evt:Event):void
+			{
+				var x:XML = XML(evt.target.data);				
+				comGraphic.chartCount.dataProvider = x.r;
+			}

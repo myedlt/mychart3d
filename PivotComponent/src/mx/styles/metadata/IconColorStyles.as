@@ -21,7 +21,7 @@
  *  The default value depends on the component class;
  *  if it is not overridden by the class, the default value is <code>0x111111</code>.
  */
-[Style(name="iconColor", type="uint", format="Color", inherit="yes")]
+//[Style(name="iconColor", type="uint", format="Color", inherit="yes")]
 
 /**
  *  The color for the icon in a disabled skin. 
@@ -34,4 +34,4 @@
  *  The default value depends on the component class;
  *  if it is not overridden by the class, the default value is <code>0x999999</code>.
  */
-[Style(name="disabledIconColor", type="uint", format="Color", inherit="yes")]
+//[Style(name="disabledIconColor", type="uint", format="Color", inherit="yes")]
